@@ -1,7 +1,7 @@
 import flet as ft
 
 from app.sidebar import Sidebar, SidebarArea
-from data.views import Views
+from core.views import Views
 
 
 class Root(ft.Container):

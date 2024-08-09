@@ -2,7 +2,7 @@ from typing import Optional
 
 import flet as ft
 
-from data.views import Views, SidebarButtonInfo
+from core.views import Views, SidebarButtonInfo
 
 
 
