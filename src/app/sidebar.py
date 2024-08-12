@@ -2,7 +2,7 @@ from typing import Optional
 
 import flet as ft
 
-from core.views import Views, SidebarButtonInfo
+from app.views import Views, SidebarButtonInfo
 
 
 
@@ -48,7 +48,7 @@ class SidebarArea(ft.Column):
             self.width = CONST_SIDEBAR.WIDTH_EXTENDED
         else:
             self.width = CONST_SIDEBAR.WIDTH_COLLAPSED
-        self.update()
+        self.page.update()
 
 class Sidebar(ft.Column):
 
@@ -60,12 +60,12 @@ class Sidebar(ft.Column):
         ft.FloatingActionButton
         self.toggle_button = SidebarToggleButton(self)
         self.buttons: list[SidebarButton] = [
-            SidebarButton.createSidebarButton(Views.EMOJIS, self, selected=True),
+            SidebarButton.createSidebarButton(Views.EMOJIS, self),
             SidebarButton.createSidebarButton(Views.USERS, self),
             SidebarButton.createSidebarButton(Views.SETTINGS, self),
         ]
 
-        self.width = CONST_SIDEBAR.WIDTH_EXTENDED
+        self.width = CONST_SIDEBAR.WIDTH_COLLAPSED
 
         self.controls = [self.toggle_button]
         self.controls.extend(self.buttons)
@@ -75,15 +75,17 @@ class Sidebar(ft.Column):
         extend = self.extended
 
         if extend:
+            self.width = CONST_SIDEBAR.WIDTH_EXTENDED
             self.toggle_button.icon = ft.icons.CLOSE_ROUNDED
         else:
+            self.width = CONST_SIDEBAR.WIDTH_COLLAPSED
             self.toggle_button.icon = ft.icons.MENU_ROUNDED
         
         for button in self.buttons:
             button.toggleExtended(extend)
         
         self.sidebar_area.toggleExtended(extend)
-        self.update()
+        self.page.update()
     
 
 
@@ -158,7 +160,7 @@ class SidebarButton(ft.Container):
         if self._icon != value:
             self._icon = value
             self.icon_content.name = value
-            self.icon_content.update()
+            self.page.update()
     
     @property
     def text(self) -> Optional[str]:
@@ -169,7 +171,7 @@ class SidebarButton(ft.Container):
         if self._text != value:
             self._text = value
             self.text_content.value = value
-            self.text_content.update()
+            self.page.update()
     
     @property
     def selected(self) -> bool:
@@ -188,10 +190,10 @@ class SidebarButton(ft.Container):
         else:
             self.width = CONST_SIDEBAR.WIDTH_COLLAPSED
             self.text_container.width = 0
-        self.update()
+        self.page.update()
 
     def changeView(self, e):
-        self.page.data['rootInstance'].currentView = self.target
+        self.page.data['rootInstance'].navigate(self.target)
         for button in self.sidebar.buttons:
             button.selected = button.target == self.target
         self.page.update()

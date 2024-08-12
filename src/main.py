@@ -25,14 +25,16 @@ def main(page: ft.Page):
 
     page.window.prevent_close = True
     page.window.on_event = windowEventHandler
-
+    
     root = Root()
 
     page.data = {'rootInstance': root}
+
+    page.padding = 0
 
     page.add(root)
     page.update()
 
 if __name__ == '__main__':
-    ft.app(target=main)
+    ft.app(target=main, view=ft.AppView.FLET_APP)
 
