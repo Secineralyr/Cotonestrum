@@ -1,7 +1,6 @@
 import asyncio
 import flet as ft
 
-from core.datatypes import EmojiData
 from core import registry
 
 from app.utils.util import SizeAwareControl

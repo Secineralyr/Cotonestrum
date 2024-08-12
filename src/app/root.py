@@ -49,7 +49,10 @@ class Root(ft.Container):
                             margin=10,
                         ),
                         ft.VerticalDivider(width=1),
-                        self.main_panel,
+                        ft.Container(
+                            content=self.main_panel,
+                            alignment=ft.alignment.top_left,
+                        ),
                     ],
                     spacing=0,
                 ),
