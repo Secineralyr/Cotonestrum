@@ -137,7 +137,12 @@ class EmojiList(ft.ListView):
 
         self.controls = []
     
-    def update_emoji(self, emoji_data: EmojiData):
+    def update_emoji(self, eid: str):
+        emoji_data = registry.get_emoji(eid)
+        if emoji_data is None:
+            print(f"Emoji '{eid}' couldn't found in registry.")
+            return
+
         eid = emoji_data.id
         name = emoji_data.name
         category = emoji_data.category
@@ -410,8 +415,9 @@ class EmojiItem(ft.Container):
 
     async def get_username(self):
         while not self.username_resolved:
-            username = registry.get_username(self.username[1:-1])
-            if username is not None:
+            user = registry.get_user(self.username[1:-1])
+            if user is not None:
+                username = user.username
                 self.update_username(username)
                 self.username_resolved = True
                 break
