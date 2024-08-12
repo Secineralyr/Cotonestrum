@@ -1,7 +1,7 @@
 from core.datatypes import EmojiData, UserData, RiskData, ReasonData
 
 emojis: dict[str, EmojiData] = {}
-users: dict[str, UserData] = {'1278-adsadsa': UserData('1278-adsadsa', '8721378321', 'adminminzimi')}
+users: dict[str, UserData] = {}
 risks: dict[str, RiskData] = {}
 reasons: dict[str, ReasonData] = {}
 

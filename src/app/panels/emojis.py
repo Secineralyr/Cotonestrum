@@ -39,14 +39,6 @@ class PanelEmojis(ft.Row):
             ),
         ]
 
-    def did_mount(self):
-        e = EmojiData('8731483418-184698341-0urjhifds', 'ijosad', 'nameaa23421342112aaaaaaa', 'cate', ['t1', 't2', 't3', 't4', 't5'], 'http://localhost:3000/emoji/fununu.webp', True, 'lic', None, 'aaa', 'aaa')
-        self.list_emoji.update_emoji(e)
-        e = EmojiData('8731483418-184698341-0urjhifads', 'ijodsad', 'nameaa23421', 'catasde', ['tasdasdadas1', 'tfs2', 'fqwfwqt3', 'tdsa4'], 'http://localhost:3000/emoji/fununu.webp', False, 'lice', '1278-adsadsa', 'aaa', 'aaa')
-        self.list_emoji.update_emoji(e)
-        self.list_emoji.emojis['8731483418-184698341-0urjhifds'].update_reason('aaaaa')
-
-
     def update_selected(self):
         self.bulk.update_selected()
     
