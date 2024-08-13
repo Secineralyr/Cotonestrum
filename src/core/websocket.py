@@ -7,6 +7,7 @@ import websockets
 import websockets.exceptions
 
 from core import wsmsg
+from core import registry
 
 ws = None
 task = None
@@ -58,30 +59,31 @@ async def reception(ws):
                 if op == 'ok':
                     if 'callback' in data:
                         data['callback'](body)
+                elif op == 'denied':
+                    pass # todo
                 else:
                     if 'error' in data:
                         data['error'](body)
-            match op:
-                case 'user_update':
-                    pass
-                case 'emoji_update':
-                    pass
-                case 'emoji_delete':
-                    pass
-                case 'risk_update':
-                    pass
-                case 'reason_update':
-                    pass
-                case 'denied':
-                    pass
-                case 'misskey_api_error':
-                    pass
-                case 'misskey_unknown_error':
-                    pass
-                case 'error':
-                    pass
-                case 'internal_error':
-                    pass
+            if reqid is None:
+                match op:
+                    case 'user_update':
+                        registry.put_user(body['id'], body['misskey_id'], body['username'])
+                    case 'emoji_update':
+                        registry.put_emoji(body['id'], body['misskey_id'], body['name'], body['category'], body['tags'], body['url'], body['is_self_made'], body['license'], body['owner_id'], body['created_at'], body['updated_at'])
+                    case 'emoji_delete':
+                        registry.pop_emoji(body['id'])
+                    case 'risk_update':
+                        registry.put_risk(body['id'], body['checked'], body['level'], body['reason_genre'], body['remark'], body['created_at'], body['updated_at'])
+                    case 'reason_update':
+                        registry.put_reason(body['id'], body['text'], body['created_at'], body['updated_at'])
+                    case 'misskey_api_error':
+                        pass # todo
+                    case 'misskey_unknown_error':
+                        pass # todo
+                    case 'error':
+                        pass # todo
+                    case 'internal_error':
+                        pass # todo
         except asyncio.exceptions.CancelledError:
             break
         except websockets.ConnectionClosed:

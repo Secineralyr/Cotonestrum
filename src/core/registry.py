@@ -14,6 +14,12 @@ def get_emoji(eid):
     else:
         return None
 
+def pop_emoji(eid):
+    if eid in emojis:
+        return emojis.pop(eid)
+    else:
+        return None
+
 def put_user(uid, misskey_id, username):
     users[uid] = UserData(uid, misskey_id, username)
 
