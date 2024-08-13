@@ -4,6 +4,7 @@ from app.sidebar import Sidebar, SidebarArea
 from app.panels.emojis import PanelEmojis
 from app.panels.users import PanelUsers
 from app.panels.settings import PanelSettings
+from app.panels.logs import PanelLogs
 
 from app.views import Views
 
@@ -25,6 +26,8 @@ class Root(ft.Container):
                 self.main_panel.content = self.panel_users
             case Views.SETTINGS:
                 self.main_panel.content = self.panel_settings
+            case Views.LOGS:
+                self.main_panel.content = self.panel_logs
 
     def __init__(self):
         super().__init__()
@@ -37,6 +40,7 @@ class Root(ft.Container):
         self.panel_emojis = PanelEmojis()
         self.panel_users = PanelUsers()
         self.panel_settings = PanelSettings()
+        self.panel_logs = PanelLogs()
 
         self.main_panel = ft.Container(content=ft.Text('Main Panel'), expand=True)
 

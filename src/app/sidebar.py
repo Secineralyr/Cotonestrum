@@ -50,38 +50,54 @@ class SidebarArea(ft.Column):
             self.width = CONST_SIDEBAR.WIDTH_COLLAPSED
         self.page.update()
 
-class Sidebar(ft.Column):
+class Sidebar(ft.Container):
 
     def __init__(self, sidebar_area: SidebarArea):
         super().__init__()
 
         self.extended = False
         self.sidebar_area = sidebar_area
-        ft.FloatingActionButton
+
         self.toggle_button = SidebarToggleButton(self)
         self.buttons: list[SidebarButton] = [
             SidebarButton.create_sidebar_button(Views.EMOJIS, self),
             SidebarButton.create_sidebar_button(Views.USERS, self),
+        ]
+        self.button_logs = SidebarButtonWithBadge.create_sidebar_button(Views.LOGS, self)
+        self.buttons_bottom: list[SidebarButton] = [
+            self.button_logs,
             SidebarButton.create_sidebar_button(Views.SETTINGS, self),
         ]
 
-        self.width = CONST_SIDEBAR.WIDTH_COLLAPSED
-
-        self.controls = [self.toggle_button]
-        self.controls.extend(self.buttons)
+        self.content = ft.Column(
+            controls = [
+                ft.Container(
+                    content=ft.Column(
+                        controls=[self.toggle_button, *self.buttons],
+                    ),
+                ),
+                ft.Container(
+                    content=ft.Column(
+                        controls=self.buttons_bottom,
+                    ),
+                ),
+            ],
+            width=CONST_SIDEBAR.WIDTH_COLLAPSED,
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+        )
 
     def toggle_extended(self, e):
         self.extended = not self.extended
         extend = self.extended
 
         if extend:
-            self.width = CONST_SIDEBAR.WIDTH_EXTENDED
+            self.content.width = CONST_SIDEBAR.WIDTH_EXTENDED
             self.toggle_button.icon = ft.icons.CLOSE_ROUNDED
         else:
-            self.width = CONST_SIDEBAR.WIDTH_COLLAPSED
+            self.content.width = CONST_SIDEBAR.WIDTH_COLLAPSED
             self.toggle_button.icon = ft.icons.MENU_ROUNDED
         
-        for button in self.buttons:
+        for button in [*self.buttons, *self.buttons_bottom]:
             button.toggle_extended(extend)
         
         self.sidebar_area.toggle_extended(extend)
@@ -114,6 +130,12 @@ class SidebarButton(ft.Container):
         self._icon = self.selected_icon if self._selected else self.unselected_icon
         self._text = text
 
+        def change_view(e):
+            self.page.data['rootInstance'].navigate(self.target)
+            for button in [*self.sidebar.buttons, *self.sidebar.buttons_bottom]:
+                button.selected = button.target == self.target
+            self.page.update()
+
         self.height = CONST_SIDEBAR.BUTTON_HEIGHT
         self.width = CONST_SIDEBAR.WIDTH_COLLAPSED
         self.border_radius = 10
@@ -122,9 +144,9 @@ class SidebarButton(ft.Container):
 
         self.ink = True
 
-        self.on_click = self.change_view
+        self.on_click = change_view
 
-        self.icon_content = ft.Icon(self.icon)
+        self.icon_content = ft.Container(ft.Icon(self.icon))
         self.text_content = ft.Text(self.text, size=18)
         self.text_container = ft.Container(
             width=0,
@@ -192,11 +214,52 @@ class SidebarButton(ft.Container):
             self.text_container.width = 0
         self.page.update()
 
-    def change_view(self, e):
-        self.page.data['rootInstance'].navigate(self.target)
-        for button in self.sidebar.buttons:
-            button.selected = button.target == self.target
+
+class SidebarButtonWithBadge(SidebarButton):
+
+    def __init__(
+        self,
+        target: Views,
+        sidebar: Sidebar,
+        unselected_icon: Optional[str] = None,
+        selected_icon: Optional[str] = None,
+        text: str = '',
+        selected: bool = False,
+        **kwargs
+    ):
+        super().__init__(target, sidebar, unselected_icon, selected_icon, text, selected, **kwargs)
+
+        self.badge_value = 0
+
+        self.icon_content.content = ft.Badge(
+            content=ft.Icon(self.icon),
+            offset=ft.Offset(0, 10),
+            label_visible=False,
+        )
+
+    def _show_badge_value(self):
+        value = self.badge_value
+        self.icon_content.content.label_visible = value > 0
+        if value <= 0:
+            text = '0'
+        elif value <= 99:
+            text = str(value)
+        else:
+            text = '99+'
+        self.icon_content.content.text = text
         self.page.update()
+
+    def set_badge_value(self, value: int):
+        self.badge_value = value if value >= 0 else 0
+        self._show_badge_value()
+    
+    def get_badge_value(self):
+        return self.badge_value
+    
+    def increment_badge_value(self):
+        self.badge_value += 1
+        if self.badge_value <= 100:
+            self._show_badge_value()
 
 
 class SidebarToggleButton(ft.FloatingActionButton):
