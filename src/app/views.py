@@ -16,7 +16,7 @@ class SidebarButtonInfo(object):
     __SETTINGS = (ft.icons.SETTINGS_OUTLINED, ft.icons.SETTINGS, '設定')
 
     @classmethod
-    def getInfo(cls, view: Views) -> tuple:
+    def get_info(cls, view: Views) -> tuple:
         match view:
             case Views.EMOJIS:
                 return cls.__EMOJIS
@@ -26,7 +26,7 @@ class SidebarButtonInfo(object):
                 return cls.__SETTINGS
 
     @classmethod
-    def _getSingleInfo(cls, view: Views, index: int) -> Union[Optional[str], str]:
+    def _get_single_info(cls, view: Views, index: int) -> Union[Optional[str], str]:
         match view:
             case Views.EMOJIS:
                 return cls.__EMOJIS[index]
@@ -36,13 +36,13 @@ class SidebarButtonInfo(object):
                 return cls.__SETTINGS[index]
     
     @classmethod
-    def getUnselectedIcon(cls, view: Views) -> Optional[str]:
-        return cls._getSingleInfo(view, 0)
+    def get_unselected_icon(cls, view: Views) -> Optional[str]:
+        return cls._get_single_info(view, 0)
 
     @classmethod
-    def getSelectedIcon(cls, view: Views) -> Optional[str]:
-        return cls._getSingleInfo(view, 1)
+    def get_selected_icon(cls, view: Views) -> Optional[str]:
+        return cls._get_single_info(view, 1)
 
     @classmethod
-    def getText(cls, view: Views) -> str:
-        return cls._getSingleInfo(view, 2)
+    def get_text(cls, view: Views) -> str:
+        return cls._get_single_info(view, 2)

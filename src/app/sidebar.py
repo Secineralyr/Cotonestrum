@@ -43,7 +43,7 @@ class SidebarArea(ft.Column):
         self.controls = []
 
 
-    def toggleExtended(self, extend: bool):
+    def toggle_extended(self, extend: bool):
         if extend:
             self.width = CONST_SIDEBAR.WIDTH_EXTENDED
         else:
@@ -60,9 +60,9 @@ class Sidebar(ft.Column):
         ft.FloatingActionButton
         self.toggle_button = SidebarToggleButton(self)
         self.buttons: list[SidebarButton] = [
-            SidebarButton.createSidebarButton(Views.EMOJIS, self),
-            SidebarButton.createSidebarButton(Views.USERS, self),
-            SidebarButton.createSidebarButton(Views.SETTINGS, self),
+            SidebarButton.create_sidebar_button(Views.EMOJIS, self),
+            SidebarButton.create_sidebar_button(Views.USERS, self),
+            SidebarButton.create_sidebar_button(Views.SETTINGS, self),
         ]
 
         self.width = CONST_SIDEBAR.WIDTH_COLLAPSED
@@ -70,7 +70,7 @@ class Sidebar(ft.Column):
         self.controls = [self.toggle_button]
         self.controls.extend(self.buttons)
 
-    def toggleExtended(self, e):
+    def toggle_extended(self, e):
         self.extended = not self.extended
         extend = self.extended
 
@@ -82,9 +82,9 @@ class Sidebar(ft.Column):
             self.toggle_button.icon = ft.icons.MENU_ROUNDED
         
         for button in self.buttons:
-            button.toggleExtended(extend)
+            button.toggle_extended(extend)
         
-        self.sidebar_area.toggleExtended(extend)
+        self.sidebar_area.toggle_extended(extend)
         self.page.update()
     
 
@@ -122,7 +122,7 @@ class SidebarButton(ft.Container):
 
         self.ink = True
 
-        self.on_click = self.changeView
+        self.on_click = self.change_view
 
         self.icon_content = ft.Icon(self.icon)
         self.text_content = ft.Text(self.text, size=18)
@@ -147,8 +147,8 @@ class SidebarButton(ft.Container):
         )
     
     @classmethod
-    def createSidebarButton(cls, view: Views, sidebar: Sidebar, selected: bool = False):
-        info = SidebarButtonInfo.getInfo(view)
+    def create_sidebar_button(cls, view: Views, sidebar: Sidebar, selected: bool = False):
+        info = SidebarButtonInfo.get_info(view)
         return cls(view, sidebar, *info, selected)
     
     @property
@@ -183,7 +183,7 @@ class SidebarButton(ft.Container):
             self._selected = value
             self.icon = self.selected_icon if self._selected else self.unselected_icon
 
-    def toggleExtended(self, extend: bool):
+    def toggle_extended(self, extend: bool):
         if extend:
             self.width = CONST_SIDEBAR.WIDTH_EXTENDED
             self.text_container.width = CONST_SIDEBAR.WIDTH_EXTENDED - CONST_SIDEBAR.WIDTH_COLLAPSED
@@ -192,7 +192,7 @@ class SidebarButton(ft.Container):
             self.text_container.width = 0
         self.page.update()
 
-    def changeView(self, e):
+    def change_view(self, e):
         self.page.data['rootInstance'].navigate(self.target)
         for button in self.sidebar.buttons:
             button.selected = button.target == self.target
@@ -209,7 +209,7 @@ class SidebarToggleButton(ft.FloatingActionButton):
         self.width = CONST_SIDEBAR.WIDTH_COLLAPSED
         self.icon = ft.icons.MENU_ROUNDED
 
-        self.on_click = self.sidebar.toggleExtended
+        self.on_click = self.sidebar.toggle_extended
 
 
 

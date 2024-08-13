@@ -4,7 +4,7 @@ from app.root import Root
 
 def main(page: ft.Page):
 
-    def windowEventHandler(e):
+    def window_event_handler(e):
         if e.data == 'close':
             page.window.destroy()
     
@@ -24,7 +24,7 @@ def main(page: ft.Page):
     page.theme_mode = 'DARK'
 
     page.window.prevent_close = True
-    page.window.on_event = windowEventHandler
+    page.window.on_event = window_event_handler
     
     root = Root()
 

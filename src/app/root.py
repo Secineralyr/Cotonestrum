@@ -10,14 +10,14 @@ from app.views import Views
 
 class Root(ft.Container):
 
-    __currentView = None
+    __current_view = None
 
     @property
-    def currentView(self) -> Views:
-        return self.__currentView
+    def current_view(self) -> Views:
+        return self.__current_view
     
     def navigate(self, value: Views):
-        self.__currentView = value
+        self.__current_view = value
         match value:
             case Views.EMOJIS:
                 self.main_panel.content = self.panel_emojis
