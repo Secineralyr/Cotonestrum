@@ -41,6 +41,11 @@ async def disconnect(panel_settings):
     ws = None
     panel_settings.set_connect_state(0)
 
+async def create_send_task(op, callback, error_callback):
+    msg = op.build()
+    pending[op.reqid] = {'msg': msg, 'callback': callback, 'error': error_callback}
+    asyncio.create_task(ws.send(msg))
+
 async def reception(ws):
     while True:
         try:
@@ -106,7 +111,8 @@ async def auth(token, panel_settings):
         panel_settings.set_auth_state(0)
 
     op = wsmsg.Auth(token)
-    msg = op.build()
-    pending[op.reqid] = {'msg': msg, 'callback': callback_auth, 'error': error_auth}
-    await ws.send(msg)
+    await create_send_task(op, callback_auth, error_auth)
+
+
+
 
