@@ -31,7 +31,7 @@ class SidebarButtonInfo(object):
 
     @classmethod
     def _get_single_info(cls, view: Views, index: int) -> Union[Optional[str], str]:
-        return cls.getInfo(view)[index]
+        return cls.get_info(view)[index]
     
     @classmethod
     def get_unselected_icon(cls, view: Views) -> Optional[str]:

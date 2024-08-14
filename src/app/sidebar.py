@@ -181,7 +181,7 @@ class SidebarButton(ft.Container):
     def icon(self, value: Optional[str]):
         if self._icon != value:
             self._icon = value
-            self.icon_content.name = value
+            self.icon_content.content.name = value
             self.page.update()
     
     @property
@@ -237,6 +237,17 @@ class SidebarButtonWithBadge(SidebarButton):
             label_visible=False,
         )
 
+    @property
+    def icon(self) -> Optional[str]:
+        return self._icon
+    
+    @icon.setter
+    def icon(self, value: Optional[str]):
+        if self._icon != value:
+            self._icon = value
+            self.icon_content.content.content.name = value
+            self.page.update()
+    
     def _show_badge_value(self):
         value = self.badge_value
         self.icon_content.content.label_visible = value > 0
