@@ -130,7 +130,7 @@ class EmojiList(ft.ListView):
 
         self.main = main
 
-        self.emojis = {}
+        self.emojis: dict[str, EmojiItem] = {}
 
         self.expand = True
 
@@ -150,6 +150,7 @@ class EmojiList(ft.ListView):
         sm = emoji_data.is_self_made
         license = emoji_data.license
         owner = emoji_data.owner_id
+        risk_id = emoji_data.risk_id
         if owner is not None:
             owner = f'<{owner}>'
         
@@ -157,16 +158,26 @@ class EmojiList(ft.ListView):
             e: EmojiItem = self.emojis[eid]
             e.update_name(name)
         else:
-            e = EmojiItem(self.main, name, category, tags, url, sm, license, owner)
+            e = EmojiItem(self.main, name, category, tags, url, sm, license, owner, risk_id)
             
             self.emojis[eid] = e
 
             self.controls.append(e)
             self.page.update()
             self.main.count_emojis += 1
+    
+    def delete_emoji(self, eid: str):
+        if eid in self.emojis:
+            e = self.emojis[eid]
+            if e.checkbox.value:
+                e.toggle_selected()
+            
+            self.controls.remove(e)
+            self.page.update()
+            self.main.count_emojis -= 1
 
 class EmojiItem(ft.Container):
-    def __init__(self, main: PanelEmojis, name: str, category: str, tags: list[str], url: str, is_self_made: bool, license: str, username: str | None):
+    def __init__(self, main: PanelEmojis, name: str, category: str, tags: list[str], url: str, is_self_made: bool, license: str, username: str | None, risk_id: str):
         super().__init__()
 
         self.main = main
@@ -183,6 +194,7 @@ class EmojiItem(ft.Container):
         else:
             self.username_resolved = True
             self.username = '<Unknown>'
+        self.risk_id = risk_id
         self.is_self_made = is_self_made
 
         def checker_need_tooltip(threshold_width):
@@ -298,6 +310,7 @@ class EmojiItem(ft.Container):
                 ],
             ),
             on_change=change_risk_level,
+            disabled=True,
         )
         self.reason = ft.Container(
             content=ft.Dropdown(
@@ -313,6 +326,7 @@ class EmojiItem(ft.Container):
             ),
             expand=True,
             padding=4,
+            disabled=True,
         )
         self.remark = ft.Container(
             content=ft.TextField(
@@ -325,6 +339,7 @@ class EmojiItem(ft.Container):
             ),
             expand=True,
             padding=4,
+            disabled=True,
         )
 
         self.height = 50
@@ -410,7 +425,7 @@ class EmojiItem(ft.Container):
     
     def did_mount(self):
         self.page.run_task(self.get_username)
-    
+        self.page.run_task(self.get_risk)
 
     async def get_username(self):
         while not self.username_resolved:
@@ -422,8 +437,17 @@ class EmojiItem(ft.Container):
                 break
             await asyncio.sleep(1)
 
+    async def get_risk(self):
+        while True:
+            risk = registry.get_risk(self.risk_id)
+            if risk is not None:
+                risk_level = risk.level
+                reason = risk.reason_genre
+                remark = risk.remark
+                self.update_risk(risk_level, reason, remark)
+            await asyncio.sleep(1)
 
-    def toggle_selected(self, e):
+    def toggle_selected(self):
         checked = self.checkbox.value
         if checked:
             self.main.selected.add(self)
@@ -515,7 +539,23 @@ class EmojiItem(ft.Container):
         )
         self.page.update()
 
-    def update_risk_level(self, level):
+    def change_risk_id(self, risk_id):
+        if self.risk_id != risk_id:
+            self.risk_level.disabled = True
+            self.reason.disabled = True
+            self.remark.disabled = True
+            self.risk_id = risk_id
+            self.page.run_task(self.get_risk)
+        self.page.update()
+
+    def update_risk(self, level, reason, remark):
+        self.update_risk_level(self, level, False)
+        self.update_reason(self, reason, False)
+        self.update_remark(self, remark, False)
+        self.page.update()
+
+    def update_risk_level(self, level, _update=True):
+        self.risk_level.disabled = False
         match level:
             case None:
                 self.risk_level.value = None
@@ -527,19 +567,24 @@ class EmojiItem(ft.Container):
                 self.risk_level.value = 'risk_2'
             case 3:
                 self.risk_level.value = 'risk_3'
-        self.page.update()
+        if _update:
+            self.page.update()
 
-    def update_reason(self, rsid):
+    def update_reason(self, rsid, _update=True):
+        self.reason.disabled = False
         self.reason.content.value = rsid
         if rsid is not None:
             self.reason.content.hint_text = f'<{rsid}>'
         else:
             self.reason.content.hint_text = ''
-        self.page.update()
+        if _update:
+            self.page.update()
 
-    def update_remark(self, text):
+    def update_remark(self, text, _update=True):
+        self.remark.disabled = False
         self.remark.content.value = text
-        self.page.update()
+        if _update:
+            self.page.update()
 
     def reload_dropdown(self):
         self.reason.content.options = [ft.dropdown.Option(key='none', text='<リセットする>')]

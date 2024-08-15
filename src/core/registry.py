@@ -41,6 +41,12 @@ def get_risk(rid):
 def put_reason(rsid, text, created_at, updated_at):
     reasons[rsid] = ReasonData(rsid, text, created_at, updated_at)
 
+def pop_reason(rsid):
+    if rsid in reasons:
+        return reasons.pop(rsid)
+    else:
+        return None
+
 def get_reason(rsid):
     if rsid in reasons:
         return reasons[rsid]

@@ -13,11 +13,11 @@ ws = None
 task = None
 pending = {}
 
-async def connect(server_host, panel_settings):
+async def connect(server_host, page):
     global ws, task
     if ws is not None:
         return
-    panel_settings.set_connect_state(1)
+    page.data['settings'].set_connect_state(1)
     if ':'  not in server_host:
         server_host += ':3005'
     try:
@@ -26,13 +26,13 @@ async def connect(server_host, panel_settings):
     except (OSError, TimeoutError, websockets.exceptions.InvalidURI, websockets.exceptions.InvalidHandshake):
         traceback.print_exc()
         print('websocket connection could not opened')
-        panel_settings.set_connect_state(0)
+        page.data['settings'].set_connect_state(0)
     else:
-        task = asyncio.create_task(reception(ws))
+        task = asyncio.create_task(reception(ws, page))
         print('websocket connection opened')
-        panel_settings.set_connect_state(2)
+        page.data['settings'].set_connect_state(2)
 
-async def disconnect(panel_settings):
+async def disconnect(page):
     global ws, task
     if ws is None:
         return
@@ -40,14 +40,19 @@ async def disconnect(panel_settings):
     task.cancel()
     print('websocket connection closed')
     ws = None
-    panel_settings.set_connect_state(0)
+    page.data['settings'].set_connect_state(0)
 
-async def create_send_task(op, callback, error_callback):
+async def create_send_task(op, callback = None, error_callback = None):
     msg = op.build()
-    pending[op.reqid] = {'msg': msg, 'callback': callback, 'error': error_callback}
+    operation = {'msg': msg}
+    if callback is not None:
+        operation['callback'] = callback
+    if error_callback is not None:
+        operation['error'] = error_callback
+    pending[op.reqid] = operation
     asyncio.create_task(ws.send(msg))
 
-async def reception(ws):
+async def reception(ws, page):
     while True:
         try:
             data = json.loads(await ws.recv())
@@ -55,35 +60,72 @@ async def reception(ws):
             reqid = data['reqid'] if 'reqid' in data else None
             body = data['body']
             if reqid in pending:
-                data = pending.pop(reqid)
+                operation = pending.pop(reqid)
                 if op == 'ok':
-                    if 'callback' in data:
-                        data['callback'](body)
+                    log_subject = '操作は完了しました'
+                    log_text = f"操作: {body['op']}"
+                    if 'callback' in operation:
+                        ret = operation['callback'](body, page)
+                        if ret is not None:
+                            log_subject, log_text = ret
                 elif op == 'denied':
-                    pass # todo
+                    log_subject = '操作が拒否されました'
+                    log_text = f"操作: {body['op']}\n追記: {body['message']}\n必要な権限が不足している可能性があります。"
+                elif op == 'internal_error':
+                    log_subject = '内部エラーが発生しました'
+                    log_text = f"操作: {body['op']}\n追記: {body['message']}\nこれはサーバー側の問題です。直らない場合報告してください。"
                 else:
-                    if 'error' in data:
-                        data['error'](body)
-            if reqid is None:
+                    log_subject = 'エラーが発生しました'
+                    log_text = f"操作: {body['op']}\n追記: {body['message']}"
+                    if 'error' in operation:
+                        ret = operation['error'](body, data['op'], page)
+                        if ret is not None:
+                            log_subject, log_text = ret
+                page.data['logs'].write_log(log_subject, log_text, data)
+            elif reqid is None:
                 match op:
                     case 'user_update':
                         registry.put_user(body['id'], body['misskey_id'], body['username'])
+                        log_subject = 'ユーザーのデータを取得しました'
+                        log_text = ''
                     case 'emoji_update':
                         registry.put_emoji(body['id'], body['misskey_id'], body['name'], body['category'], body['tags'], body['url'], body['is_self_made'], body['license'], body['owner_id'], body['created_at'], body['updated_at'])
+                        page.data['emojis'].list_emoji.update_emoji(body['id'])
+                        log_subject = '絵文字のデータを取得しました'
+                        log_text = ''
                     case 'emoji_delete':
                         registry.pop_emoji(body['id'])
+                        page.data['emojis'].list_emoji.delete_emoji(body['id'])
+                        log_subject = '絵文字のデータが削除されました'
+                        log_text = ''
                     case 'risk_update':
                         registry.put_risk(body['id'], body['checked'], body['level'], body['reason_genre'], body['remark'], body['created_at'], body['updated_at'])
+                        log_subject = 'リスクのデータを取得しました'
+                        log_text = ''
                     case 'reason_update':
                         registry.put_reason(body['id'], body['text'], body['created_at'], body['updated_at'])
+                        log_subject = '理由区分のデータを取得しました'
+                        log_text = ''
+                    case 'reason_delete':
+                        registry.pop_reason(body['id'])
+                        log_subject = '理由区分のデータが削除されました'
+                        log_text = ''
                     case 'misskey_api_error':
-                        pass # todo
+                        log_subject = 'サーバー側の処理でエラーが発生しました'
+                        log_text = 'これはサーバー側のプログラムのバグか設定ミスが原因である可能性が極めて高いです。報告してください。'
                     case 'misskey_unknown_error':
-                        pass # todo
+                        log_subject = 'サーバー側の処理でエラーが発生しました'
+                        log_text = 'これはサーバー側のプログラムのバグか設定ミスが原因である可能性が極めて高いです。報告してください。'
                     case 'error':
-                        pass # todo
+                        log_subject = 'サーバー側の処理でエラーが発生しました'
+                        log_text = 'これはサーバー側のプログラムのバグか設定ミスが原因である可能性が極めて高いです。報告してください。'
                     case 'internal_error':
-                        pass # todo
+                        log_subject = 'サーバー側の処理で内部エラーが発生しました'
+                        log_text = 'これはサーバー側のプログラムのバグか設定ミスが原因である可能性が極めて高いです。報告してください。'
+                    case _:
+                        log_subject = f'<{op}>'
+                        log_text = ''
+                page.data['logs'].write_log(log_subject, log_text, data)
         except asyncio.exceptions.CancelledError:
             break
         except websockets.ConnectionClosed:
@@ -92,25 +134,25 @@ async def reception(ws):
             traceback.print_exc()
 
 
-async def auth(token, panel_settings):
+async def auth(token, page):
     global ws
     if ws is None:
         return
-    panel_settings.set_auth_state(1)
+    page.data['settings'].set_auth_state(1)
 
-    def callback_auth(body):
+    def callback_auth(body, page):
         match body['message']:
             case "You logged in as 'User'.":
-                panel_settings.set_auth_state(2)
+                page.data['settings'].set_auth_state(2)
             case "You logged in as 'Emoji moderator'.":
-                panel_settings.set_auth_state(3)
+                page.data['settings'].set_auth_state(3)
             case "You logged in as 'Moderator'.":
-                panel_settings.set_auth_state(4)
+                page.data['settings'].set_auth_state(4)
             case "You logged in as 'Administrator'.":
-                panel_settings.set_auth_state(5)
+                page.data['settings'].set_auth_state(5)
     
-    def error_auth(body):
-        panel_settings.set_auth_state(0)
+    def error_auth(body, err, page):
+        page.data['settings'].set_auth_state(0)
 
     op = wsmsg.Auth(token)
     await create_send_task(op, callback_auth, error_auth)

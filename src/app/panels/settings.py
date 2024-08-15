@@ -32,13 +32,13 @@ class PanelSettings(ft.Container):
 
         async def connect(e):
             if self.connect_state == 0:
-                await websocket.connect(self.addr.value, self)
+                await websocket.connect(self.addr.value, self.page)
             elif self.connect_state == 2:
-                await websocket.disconnect(self)
+                await websocket.disconnect(self.page)
 
         async def auth(e):
             token = self.mi_token.value
-            await websocket.auth(token, self)
+            await websocket.auth(token, self.page)
 
         self.addr = ft.TextField(
             label='Emoji Moderation Serverのアドレス',

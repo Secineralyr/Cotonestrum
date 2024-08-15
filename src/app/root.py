@@ -28,6 +28,7 @@ class Root(ft.Container):
                 self.main_panel.content = self.panel_settings
             case Views.LOGS:
                 self.main_panel.content = self.panel_logs
+                self.sidebar.button_logs.reset_badge_value()
 
     def __init__(self):
         super().__init__()
@@ -41,6 +42,13 @@ class Root(ft.Container):
         self.panel_users = PanelUsers()
         self.panel_settings = PanelSettings()
         self.panel_logs = PanelLogs()
+
+        self.page.data['sidebar'] = self.sidebar
+
+        self.page.data['emojis'] = self.panel_emojis
+        self.page.data['users'] = self.panel_users
+        self.page.data['settings'] = self.panel_settings
+        self.page.data['logs'] = self.panel_logs
 
         self.main_panel = ft.Container(content=ft.Text('Main Panel'), expand=True)
 

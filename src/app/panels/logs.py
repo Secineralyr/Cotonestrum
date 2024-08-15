@@ -32,7 +32,7 @@ class PanelLogs(ft.Container):
             ],
         )
     
-    def write_log(self, subject: str, text: str, data: dict = None):
+    def write_log(self, subject: str, text: str, data: dict = None, error: bool = False):
         item = ft.Row(
             controls=[
                 ft.Container(
@@ -100,5 +100,7 @@ class PanelLogs(ft.Container):
             height=200,
         )
         self.log_view.controls.append(item)
+        if error:
+            self.page.data['sidebar'].button_logs.increment_badge_value()
         self.page.update()
 

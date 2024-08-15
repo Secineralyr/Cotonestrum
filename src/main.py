@@ -29,7 +29,7 @@ def main(page: ft.Page):
     
     root = Root()
 
-    page.data = {'rootInstance': root}
+    page.data = {'root': root}
 
     page.padding = 0
 

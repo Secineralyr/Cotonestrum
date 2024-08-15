@@ -131,7 +131,7 @@ class SidebarButton(ft.Container):
         self._text = text
 
         def change_view(e):
-            self.page.data['rootInstance'].navigate(self.target)
+            self.page.data['root'].navigate(self.target)
             for button in [*self.sidebar.buttons, *self.sidebar.buttons_bottom]:
                 button.selected = button.target == self.target
             self.page.update()
@@ -267,6 +267,11 @@ class SidebarButtonWithBadge(SidebarButton):
     def get_badge_value(self):
         return self.badge_value
     
+    def reset_badge_value(self):
+        if self.badge_value != 0:
+            self.badge_value = 0
+            self._show_badge_value()
+
     def increment_badge_value(self):
         self.badge_value += 1
         if self.badge_value <= 100:
