@@ -55,7 +55,6 @@ class Root(ft.Container):
                         ft.VerticalDivider(width=1),
                         ft.Container(
                             content=self.main_panel,
-                            alignment=ft.alignment.top_left,
                         ),
                     ],
                     spacing=0,

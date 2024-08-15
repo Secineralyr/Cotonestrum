@@ -102,6 +102,7 @@ class PanelSettings(ft.Container):
 
         self.expand = True
         self.margin = 15
+        self.alignment = ft.alignment.top_left
 
         self.content = ft.Column(
             controls=[
