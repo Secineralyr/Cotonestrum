@@ -64,6 +64,7 @@ async def reception(ws, page):
                 if op == 'ok':
                     log_subject = '操作は完了しました'
                     log_text = f"操作: {body['op']}"
+                    is_error = False
                     if 'callback' in operation:
                         ret = operation['callback'](body, page)
                         if ret is not None:
@@ -71,61 +72,74 @@ async def reception(ws, page):
                 elif op == 'denied':
                     log_subject = '操作が拒否されました'
                     log_text = f"操作: {body['op']}\n追記: {body['message']}\n必要な権限が不足している可能性があります。"
+                    is_error = True
                 elif op == 'internal_error':
                     log_subject = '内部エラーが発生しました'
                     log_text = f"操作: {body['op']}\n追記: {body['message']}\nこれはサーバー側の問題です。直らない場合報告してください。"
+                    is_error = True
                 else:
                     log_subject = 'エラーが発生しました'
                     log_text = f"操作: {body['op']}\n追記: {body['message']}"
+                    is_error = True
                     if 'error' in operation:
                         ret = operation['error'](body, data['op'], page)
                         if ret is not None:
                             log_subject, log_text = ret
-                page.data['logs'].write_log(log_subject, log_text, data)
+                page.data['logs'].write_log(log_subject, log_text, data, is_error)
             elif reqid is None:
                 match op:
                     case 'user_update':
                         registry.put_user(body['id'], body['misskey_id'], body['username'])
                         log_subject = 'ユーザーのデータを取得しました'
                         log_text = ''
+                        is_error = False
                     case 'emoji_update':
                         registry.put_emoji(body['id'], body['misskey_id'], body['name'], body['category'], body['tags'], body['url'], body['is_self_made'], body['license'], body['owner_id'], body['created_at'], body['updated_at'])
                         page.data['emojis'].list_emoji.update_emoji(body['id'])
                         log_subject = '絵文字のデータを取得しました'
                         log_text = ''
+                        is_error = False
                     case 'emoji_delete':
                         registry.pop_emoji(body['id'])
                         page.data['emojis'].list_emoji.delete_emoji(body['id'])
                         log_subject = '絵文字のデータが削除されました'
                         log_text = ''
+                        is_error = False
                     case 'risk_update':
                         registry.put_risk(body['id'], body['checked'], body['level'], body['reason_genre'], body['remark'], body['created_at'], body['updated_at'])
                         log_subject = 'リスクのデータを取得しました'
                         log_text = ''
+                        is_error = False
                     case 'reason_update':
                         registry.put_reason(body['id'], body['text'], body['created_at'], body['updated_at'])
                         log_subject = '理由区分のデータを取得しました'
                         log_text = ''
+                        is_error = False
                     case 'reason_delete':
                         registry.pop_reason(body['id'])
                         log_subject = '理由区分のデータが削除されました'
                         log_text = ''
+                        is_error = False
                     case 'misskey_api_error':
                         log_subject = 'サーバー側の処理でエラーが発生しました'
                         log_text = 'これはサーバー側のプログラムのバグか設定ミスが原因である可能性が極めて高いです。報告してください。'
+                        is_error = True
                     case 'misskey_unknown_error':
                         log_subject = 'サーバー側の処理でエラーが発生しました'
                         log_text = 'これはサーバー側のプログラムのバグか設定ミスが原因である可能性が極めて高いです。報告してください。'
+                        is_error = True
                     case 'error':
                         log_subject = 'サーバー側の処理でエラーが発生しました'
                         log_text = 'これはサーバー側のプログラムのバグか設定ミスが原因である可能性が極めて高いです。報告してください。'
+                        is_error = True
                     case 'internal_error':
                         log_subject = 'サーバー側の処理で内部エラーが発生しました'
                         log_text = 'これはサーバー側のプログラムのバグか設定ミスが原因である可能性が極めて高いです。報告してください。'
+                        is_error = True
                     case _:
                         log_subject = f'<{op}>'
                         log_text = ''
-                page.data['logs'].write_log(log_subject, log_text, data)
+                page.data['logs'].write_log(log_subject, log_text, data, is_error)
         except asyncio.exceptions.CancelledError:
             break
         except websockets.ConnectionClosed:
