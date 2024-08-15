@@ -42,7 +42,7 @@ async def disconnect(page):
     ws = None
     page.data['settings'].set_connect_state(0)
 
-async def create_send_task(op, callback = None, error_callback = None):
+def create_send_task(op, callback = None, error_callback = None):
     msg = op.build()
     operation = {'msg': msg}
     if callback is not None:
@@ -155,21 +155,30 @@ async def auth(token, page):
     page.data['settings'].set_auth_state(1)
 
     def callback_auth(body, page):
+        permitted = False
         match body['message']:
             case "You logged in as 'User'.":
                 page.data['settings'].set_auth_state(2)
             case "You logged in as 'Emoji moderator'.":
                 page.data['settings'].set_auth_state(3)
+                permitted = True
             case "You logged in as 'Moderator'.":
                 page.data['settings'].set_auth_state(4)
+                permitted = True
             case "You logged in as 'Administrator'.":
                 page.data['settings'].set_auth_state(5)
+                permitted = True
+        if permitted:
+            create_send_task(wsmsg.FetchAllEmojis())
+            create_send_task(wsmsg.FetchAllUsers())
+            create_send_task(wsmsg.FetchAllRisks())
+            create_send_task(wsmsg.FetchAllReasons())
     
     def error_auth(body, err, page):
         page.data['settings'].set_auth_state(0)
 
     op = wsmsg.Auth(token)
-    await create_send_task(op, callback_auth, error_auth)
+    create_send_task(op, callback_auth, error_auth)
 
 
 
