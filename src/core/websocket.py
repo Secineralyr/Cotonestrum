@@ -185,6 +185,25 @@ async def auth(token, page):
     op = wsmsg.Auth(token)
     create_send_task(op, page, callback_auth, error_auth)
 
+async def change_risk_level(rid, level, page):
+    global ws
+    if ws is None:
+        return
+    op = wsmsg.SetRiskProp(rid, level=level)
+    create_send_task(op, page)
 
+async def change_reason(rid, rsid, page):
+    global ws
+    if ws is None:
+        return
+    op = wsmsg.SetRiskProp(rid, rsid=rsid)
+    create_send_task(op, page)
+
+async def change_remark(rid, text, page):
+    global ws
+    if ws is None:
+        return
+    op = wsmsg.SetRiskProp(rid, remark=text)
+    create_send_task(op, page)
 
 

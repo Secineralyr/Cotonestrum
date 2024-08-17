@@ -2,6 +2,7 @@ import asyncio
 import flet as ft
 
 from core import registry
+from core import websocket
 
 from app.utils.util import SizeAwareControl
 
@@ -625,15 +626,15 @@ class EmojiItem(ft.Container):
 
     def change_risk_level(self, level, _update=True):
         self.update_risk_level(level, _update)
-        # todo: websocket
+        self.page.run_task(websocket.change_risk_level, self.risk_id, level, self.page)
 
     def change_reason(self, rsid, _update=True):
         self.update_reason(rsid, _update)
-        # todo: websocket
+        self.page.run_task(websocket.change_reason, self.risk_id, rsid, self.page)
 
     def change_remark(self, text, _update=True):
         self.update_remark(text, _update)
-        # todo: websocket
+        self.page.run_task(websocket.change_remark, self.risk_id, text, self.page)
 
 
 

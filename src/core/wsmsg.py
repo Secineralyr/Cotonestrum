@@ -143,13 +143,13 @@ class FetchAllReasons(IWSOperation):
 
 
 class SetRiskProp(IWSOperation):
-    def __init__(self, rid, checked=None, level=None, rsid=None, remark=None) -> None:
+    def __init__(self, rid, checked=-1, level=-1, rsid=None, remark=None) -> None:
         super().__init__('set_risk_prop')
         self.id = rid
         props = {}
-        if checked is not None:
+        if checked in [0, 1]:
             props['checked'] = checked
-        if level is not None:
+        if level in [None, 0, 1, 2, 3]:
             props['level'] = level
         if rsid is not None:
             props['reason_id'] = rsid
@@ -183,7 +183,7 @@ class CreateReason(IWSOperation):
                 }
             }
 
-class DeleteText(IWSOperation):
+class DeleteReason(IWSOperation):
     def __init__(self, rsid) -> None:
         super().__init__('delete_reason')
         self.id = rsid
