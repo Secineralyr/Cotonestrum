@@ -157,6 +157,14 @@ class EmojiList(ft.ListView):
         if eid in self.emojis:
             e: EmojiItem = self.emojis[eid]
             e.update_name(name)
+            e.update_category(category)
+            e.update_tags(tags)
+            e.update_url(url)
+            e.update_self_made(sm)
+            e.update_license(license)
+            e.update_username(owner)
+            if e.risk_id != risk_id:
+                e.change_risk_id(risk_id)
         else:
             e = EmojiItem(self.main, name, category, tags, url, sm, license, owner, risk_id)
             
