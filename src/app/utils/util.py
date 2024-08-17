@@ -15,7 +15,6 @@ class SizeAwareControl(cv.Canvas):
         def resize(e):
             self.control_width = e.width
             self.control_height = e.height
-            self.page.update()
             if self.resize_callback:
                 self.resize_callback(e)
         self.on_resize = resize

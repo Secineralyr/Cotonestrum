@@ -18,7 +18,7 @@ async def connect(server_host, page):
     if ws is not None:
         return
     page.data['settings'].set_connect_state(1)
-    if ':'  not in server_host:
+    if ':' not in server_host:
         server_host += ':3005'
     try:
         uri = f'ws://{server_host}/'
@@ -28,7 +28,7 @@ async def connect(server_host, page):
         print('websocket connection could not opened')
         page.data['settings'].set_connect_state(0)
     else:
-        task = asyncio.create_task(reception(ws, page))
+        task = page.run_task(reception, ws, page)
         print('websocket connection opened')
         page.data['settings'].set_connect_state(2)
 
@@ -42,7 +42,7 @@ async def disconnect(page):
     ws = None
     page.data['settings'].set_connect_state(0)
 
-def create_send_task(op, callback = None, error_callback = None):
+def create_send_task(op, page, callback = None, error_callback = None):
     msg = op.build()
     operation = {'msg': msg}
     if callback is not None:
@@ -50,7 +50,7 @@ def create_send_task(op, callback = None, error_callback = None):
     if error_callback is not None:
         operation['error'] = error_callback
     pending[op.reqid] = operation
-    asyncio.create_task(ws.send(msg))
+    page.run_task(ws.send, msg)
 
 async def reception(ws, page):
     while True:
@@ -66,7 +66,7 @@ async def reception(ws, page):
                     log_text = f"操作: {body['op']}"
                     is_error = False
                     if 'callback' in operation:
-                        ret = operation['callback'](body, page)
+                        ret = await operation['callback'](body, page)
                         if ret is not None:
                             log_subject, log_text = ret
                 elif op == 'denied':
@@ -82,7 +82,7 @@ async def reception(ws, page):
                     log_text = f"操作: {body['op']}\n追記: {body['message']}"
                     is_error = True
                     if 'error' in operation:
-                        ret = operation['error'](body, data['op'], page)
+                        ret = await operation['error'](body, data['op'], page)
                         if ret is not None:
                             log_subject, log_text = ret
                 page.data['logs'].write_log(log_subject, log_text, data, is_error)
@@ -94,7 +94,12 @@ async def reception(ws, page):
                         log_text = ''
                         is_error = False
                     case 'emoji_update':
-                        registry.put_emoji(body['id'], body['misskey_id'], body['name'], body['category'], body['tags'], body['url'], body['is_self_made'], body['license'], body['owner_id'], body['created_at'], body['updated_at'])
+                        tags = body['tags']
+                        if tags == '':
+                            ltags = []
+                        else:
+                            ltags = tags.split(' ')
+                        registry.put_emoji(body['id'], body['misskey_id'], body['name'], body['category'], ltags, body['url'], body['is_self_made'], body['license'], body['owner_id'], body['risk_id'], body['created_at'], body['updated_at'])
                         page.data['emojis'].list_emoji.update_emoji(body['id'])
                         log_subject = '絵文字のデータを取得しました'
                         log_text = ''
@@ -154,7 +159,7 @@ async def auth(token, page):
         return
     page.data['settings'].set_auth_state(1)
 
-    def callback_auth(body, page):
+    async def callback_auth(body, page):
         permitted = False
         match body['message']:
             case "You logged in as 'User'.":
@@ -169,16 +174,16 @@ async def auth(token, page):
                 page.data['settings'].set_auth_state(5)
                 permitted = True
         if permitted:
-            create_send_task(wsmsg.FetchAllEmojis())
-            create_send_task(wsmsg.FetchAllUsers())
-            create_send_task(wsmsg.FetchAllRisks())
-            create_send_task(wsmsg.FetchAllReasons())
+            create_send_task(wsmsg.FetchAllEmojis(), page)
+            create_send_task(wsmsg.FetchAllUsers(), page)
+            create_send_task(wsmsg.FetchAllRisks(), page)
+            create_send_task(wsmsg.FetchAllReasons(), page)
     
-    def error_auth(body, err, page):
+    async def error_auth(body, err, page):
         page.data['settings'].set_auth_state(0)
 
     op = wsmsg.Auth(token)
-    create_send_task(op, callback_auth, error_auth)
+    create_send_task(op, page, callback_auth, error_auth)
 
 
 

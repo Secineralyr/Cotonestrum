@@ -293,7 +293,7 @@ class PanelSettings(ft.Container):
                     self.status_auth.style.weight = ft.FontWeight.NORMAL
                     self.status_perm.text = '未認証'
                     self.status_perm.style.color = '#ff4040'
-        self.page.update()
+        self.update()
     
     def set_auth_state(self, state: int):
         if self.connect_state != 2:
@@ -329,5 +329,5 @@ class PanelSettings(ft.Container):
                 self.button_auth.disabled = False
                 self.status_perm.text = '認証済 (権限レベル: 管理者)'
                 self.status_perm.style.color = '#40ff40'
-        self.page.update()
+        self.update()
 

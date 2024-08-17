@@ -102,5 +102,5 @@ class PanelLogs(ft.Container):
         self.log_view.controls.append(item)
         if error:
             self.page.data['sidebar'].button_logs.increment_badge_value()
-        self.page.update()
+        self.log_view.update()
 

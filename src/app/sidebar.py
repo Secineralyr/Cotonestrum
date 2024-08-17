@@ -48,7 +48,7 @@ class SidebarArea(ft.Column):
             self.width = CONST_SIDEBAR.WIDTH_EXTENDED
         else:
             self.width = CONST_SIDEBAR.WIDTH_COLLAPSED
-        self.page.update()
+        self.update()
 
 class Sidebar(ft.Container):
 
@@ -101,7 +101,7 @@ class Sidebar(ft.Container):
             button.toggle_extended(extend)
         
         self.sidebar_area.toggle_extended(extend)
-        self.page.update()
+        self.update()
     
 
 
@@ -134,7 +134,7 @@ class SidebarButton(ft.Container):
             self.page.data['root'].navigate(self.target)
             for button in [*self.sidebar.buttons, *self.sidebar.buttons_bottom]:
                 button.selected = button.target == self.target
-            self.page.update()
+                button.update()
 
         self.height = CONST_SIDEBAR.BUTTON_HEIGHT
         self.width = CONST_SIDEBAR.WIDTH_COLLAPSED
@@ -182,7 +182,7 @@ class SidebarButton(ft.Container):
         if self._icon != value:
             self._icon = value
             self.icon_content.content.name = value
-            self.page.update()
+            self.icon_content.update()
     
     @property
     def text(self) -> Optional[str]:
@@ -193,7 +193,7 @@ class SidebarButton(ft.Container):
         if self._text != value:
             self._text = value
             self.text_content.value = value
-            self.page.update()
+            self.text_content.update()
     
     @property
     def selected(self) -> bool:
@@ -212,7 +212,7 @@ class SidebarButton(ft.Container):
         else:
             self.width = CONST_SIDEBAR.WIDTH_COLLAPSED
             self.text_container.width = 0
-        self.page.update()
+        self.update()
 
 
 class SidebarButtonWithBadge(SidebarButton):
@@ -246,7 +246,7 @@ class SidebarButtonWithBadge(SidebarButton):
         if self._icon != value:
             self._icon = value
             self.icon_content.content.content.name = value
-            self.page.update()
+            self.icon_content.update()
     
     def _show_badge_value(self):
         value = self.badge_value
@@ -258,7 +258,7 @@ class SidebarButtonWithBadge(SidebarButton):
         else:
             text = '99+'
         self.icon_content.content.text = text
-        self.page.update()
+        self.icon_content.update()
 
     def set_badge_value(self, value: int):
         self.badge_value = value if value >= 0 else 0

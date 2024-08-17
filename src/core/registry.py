@@ -5,8 +5,8 @@ users: dict[str, UserData] = {}
 risks: dict[str, RiskData] = {}
 reasons: dict[str, ReasonData] = {}
 
-def put_emoji(eid, misskey_id, name, category, tags, url, is_self_made, license, owner_id, created_at, updated_at):
-    emojis[eid] = EmojiData(eid, misskey_id, name, category, tags, url, is_self_made, license, owner_id, created_at, updated_at)
+def put_emoji(eid, misskey_id, name, category, tags, url, is_self_made, license, owner_id, risk_id, created_at, updated_at):
+    emojis[eid] = EmojiData(eid, misskey_id, name, category, tags, url, is_self_made, license, owner_id, risk_id, created_at, updated_at)
 
 def get_emoji(eid):
     if eid in emojis:

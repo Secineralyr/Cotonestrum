@@ -2,7 +2,7 @@ import flet as ft
 
 from app.root import Root
 
-def main(page: ft.Page):
+async def main(page: ft.Page):
 
     def window_event_handler(e):
         if e.data == 'close':
@@ -26,10 +26,12 @@ def main(page: ft.Page):
 
     page.window.prevent_close = True
     page.window.on_event = window_event_handler
+
+    page.data = {}
     
     root = Root()
 
-    page.data = {'root': root}
+    page.data['root'] = root
 
     page.padding = 0
 

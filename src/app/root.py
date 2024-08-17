@@ -21,14 +21,20 @@ class Root(ft.Container):
         self.__current_view = value
         match value:
             case Views.EMOJIS:
-                self.main_panel.content = self.panel_emojis
+                target = self.panel_emojis
             case Views.USERS:
-                self.main_panel.content = self.panel_users
+                target = self.panel_users
             case Views.SETTINGS:
-                self.main_panel.content = self.panel_settings
+                target = self.panel_settings
             case Views.LOGS:
-                self.main_panel.content = self.panel_logs
+                target = self.panel_logs
                 self.sidebar.button_logs.reset_badge_value()
+        for p in self.panels:
+            if p == target:
+                p.visible = True
+            else:
+                p.visible = False
+        self.page.update()
 
     def __init__(self):
         super().__init__()
@@ -43,14 +49,15 @@ class Root(ft.Container):
         self.panel_settings = PanelSettings()
         self.panel_logs = PanelLogs()
 
-        self.page.data['sidebar'] = self.sidebar
+        self.panels: list[ft.Control] = [
+            self.panel_emojis,
+            self.panel_users,
+            self.panel_settings,
+            self.panel_logs,
+        ]
 
-        self.page.data['emojis'] = self.panel_emojis
-        self.page.data['users'] = self.panel_users
-        self.page.data['settings'] = self.panel_settings
-        self.page.data['logs'] = self.panel_logs
-
-        self.main_panel = ft.Container(content=ft.Text('Main Panel'), expand=True)
+        for p in self.panels:
+            p.visible = False
 
         self.content = ft.Stack(
             controls=[
@@ -62,7 +69,10 @@ class Root(ft.Container):
                         ),
                         ft.VerticalDivider(width=1),
                         ft.Container(
-                            content=self.main_panel,
+                            content=ft.Stack(
+                                controls=self.panels,
+                            ),
+                            expand=True,
                         ),
                     ],
                     spacing=0,
@@ -74,4 +84,14 @@ class Root(ft.Container):
             ],
             expand=True
         )
+    
+    def did_mount(self):
+        self.page.data['sidebar'] = self.sidebar
+
+        self.page.data['emojis'] = self.panel_emojis
+        self.page.data['users'] = self.panel_users
+        self.page.data['settings'] = self.panel_settings
+        self.page.data['logs'] = self.panel_logs
+
+
 

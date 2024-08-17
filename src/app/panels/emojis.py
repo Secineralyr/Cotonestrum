@@ -11,7 +11,7 @@ class PanelEmojis(ft.Row):
     def __init__(self):
         super().__init__()
 
-        self.selected = set()
+        self.selected: set[EmojiItem] = set()
         self.count_emojis = 0
 
         self.list_emoji = EmojiList(self)
@@ -44,7 +44,7 @@ class PanelEmojis(ft.Row):
     def all_deselect(self):
         for e in self.selected:
             e.checkbox.value = False
-            self.page.update()
+        self.list_emoji.update()
         self.selected.clear()
 
 
@@ -163,17 +163,17 @@ class EmojiList(ft.ListView):
             self.emojis[eid] = e
 
             self.controls.append(e)
-            self.page.update()
+            self.update()
             self.main.count_emojis += 1
     
     def delete_emoji(self, eid: str):
         if eid in self.emojis:
             e = self.emojis[eid]
             if e.checkbox.value:
-                e.toggle_selected()
+                e.toggle_selected(None)
             
             self.controls.remove(e)
-            self.page.update()
+            self.update()
             self.main.count_emojis -= 1
 
 class EmojiItem(ft.Container):
@@ -199,13 +199,13 @@ class EmojiItem(ft.Container):
 
         def checker_need_tooltip(threshold_width):
             def check_need_tooltip(e: ft.canvas.CanvasResizeEvent):
-                if threshold_width > e.width:
-                    canvas = e.control
-                    if isinstance(canvas.content, ft.Tooltip):
-                        tooltip = canvas.content
+                canvas = e.control
+                if isinstance(canvas.content, ft.Tooltip):
+                    tooltip = canvas.content
+                    if threshold_width > e.width or tooltip.message == '' or tooltip.message is None:
                         content = tooltip.content
                         canvas.content = content
-                        self.page.update()
+                        canvas.update()
             return check_need_tooltip
 
         self.checkbox = ft.Checkbox(
@@ -286,27 +286,40 @@ class EmojiItem(ft.Container):
         )
 
         def change_risk_level(e):
-            # todo: websocket
-            pass
+            level = None
+            match self.risk_level.value:
+                case 'risk_0':
+                    level = 0
+                case 'risk_1':
+                    level = 1
+                case 'risk_2':
+                    level = 2
+                case 'risk_3':
+                    level = 3
+                case _:
+                    level = None
+            self.change_risk_level(level)
 
         def change_reason(e):
+            rsid = self.reason.content.value
             if self.reason.content.value == 'none':
                 self.reason.content.hint_text = ''
                 self.reason.content.value = None
-            self.page.update()
-            # todo: websocket
+                rsid = None
+            self.page.update() # instead of self.reason.update() because won't update properly (flet bug?)
+            self.change_reason(rsid)
 
         def change_remark(e):
-            # todo: websocket
-            pass
+            text = self.remark.content.value
+            self.change_remark(text)
 
         self.risk_level = ft.RadioGroup(
             content=ft.Row(
                 controls=[
-                    ft.Radio(value='risk_0', fill_color='#5bae5b'),
-                    ft.Radio(value='risk_1', fill_color='#c1d36e'),
-                    ft.Radio(value='risk_2', fill_color='#cdad4b'),
-                    ft.Radio(value='risk_3', fill_color='#cc4444'),
+                    ft.Radio(value='risk_0', fill_color='#5bae5b', toggleable=True),
+                    ft.Radio(value='risk_1', fill_color='#c1d36e', toggleable=True),
+                    ft.Radio(value='risk_2', fill_color='#cdad4b', toggleable=True),
+                    ft.Radio(value='risk_3', fill_color='#cc4444', toggleable=True),
                 ],
             ),
             on_change=change_risk_level,
@@ -445,9 +458,10 @@ class EmojiItem(ft.Container):
                 reason = risk.reason_genre
                 remark = risk.remark
                 self.update_risk(risk_level, reason, remark)
+                break
             await asyncio.sleep(1)
 
-    def toggle_selected(self):
+    def toggle_selected(self, e):
         checked = self.checkbox.value
         if checked:
             self.main.selected.add(self)
@@ -463,7 +477,7 @@ class EmojiItem(ft.Container):
             message=self.name,
             wait_duration=500,
         )
-        self.page.update()
+        self.emoji_name.update()
 
     def update_category(self, category):
         self.category = category
@@ -472,7 +486,7 @@ class EmojiItem(ft.Container):
             message=self.category,
             wait_duration=500,
         )
-        self.page.update()
+        self.emoji_category.update()
 
     def update_tags(self, tags):
         self.tags = tags
@@ -494,18 +508,18 @@ class EmojiItem(ft.Container):
             message=' '.join(self.tags),
             wait_duration=500,
         )
-        self.page.update()
+        self.emoji_tags.update()
     
     def update_url(self, url):
         self.url = url
         self.emoji_image.src = url
-        self.page.update()
+        self.emoji_image.update()
     
     def update_self_made(self, is_self_made):
         self.is_self_made = is_self_made
         self.emoji_self_made.name = ft.icons.CHECK_ROUNDED if self.is_self_made else ft.icons.CLOSE_ROUNDED
         self.emoji_self_made.color = '#d0d0d0' if self.is_self_made else '#303030'
-        self.page.update()
+        self.emoji_self_made.update()
     
     def update_license(self, license):
         self.license = license
@@ -514,7 +528,7 @@ class EmojiItem(ft.Container):
             message=self.license,
             wait_duration=500,
         )
-        self.page.update()
+        self.emoji_license.update()
 
     def update_username(self, username):
         if username.startswith('<') and username.endswith('>'):
@@ -537,7 +551,7 @@ class EmojiItem(ft.Container):
             message=self.username,
             wait_duration=500,
         )
-        self.page.update()
+        self.emoji_username.update()
 
     def change_risk_id(self, risk_id):
         if self.risk_id != risk_id:
@@ -546,13 +560,15 @@ class EmojiItem(ft.Container):
             self.remark.disabled = True
             self.risk_id = risk_id
             self.page.run_task(self.get_risk)
-        self.page.update()
+        self.update()
 
     def update_risk(self, level, reason, remark):
-        self.update_risk_level(self, level, False)
-        self.update_reason(self, reason, False)
-        self.update_remark(self, remark, False)
-        self.page.update()
+        self.update_risk_level(level, False)
+        self.update_reason(reason, False)
+        self.update_remark(remark, False)
+        if self.checkbox.value:
+            self.main.bulk.update_values()
+        self.update()
 
     def update_risk_level(self, level, _update=True):
         self.risk_level.disabled = False
@@ -568,7 +584,9 @@ class EmojiItem(ft.Container):
             case 3:
                 self.risk_level.value = 'risk_3'
         if _update:
-            self.page.update()
+            self.risk_level.update()
+            if self.checkbox.value:
+                self.main.bulk.update_values()
 
     def update_reason(self, rsid, _update=True):
         self.reason.disabled = False
@@ -578,31 +596,35 @@ class EmojiItem(ft.Container):
         else:
             self.reason.content.hint_text = ''
         if _update:
-            self.page.update()
+            self.reason.update()
+            if self.checkbox.value:
+                self.main.bulk.update_values()
 
     def update_remark(self, text, _update=True):
         self.remark.disabled = False
         self.remark.content.value = text
         if _update:
-            self.page.update()
+            self.remark.update()
+            if self.checkbox.value:
+                self.main.bulk.update_values()
 
     def reload_dropdown(self):
         self.reason.content.options = [ft.dropdown.Option(key='none', text='<リセットする>')]
         for rsid in registry.reasons:
             text = registry.reasons[rsid].text
             self.reason.content.options.append(ft.dropdown.Option(key=rsid, text=text))
-        self.page.update()
+        self.reason.update()
 
-    def change_risk_level(self, level):
-        self.update_risk_level(level)
+    def change_risk_level(self, level, _update=True):
+        self.update_risk_level(level, _update)
         # todo: websocket
 
-    def change_reason(self, rsid):
-        self.update_reason(rsid)
+    def change_reason(self, rsid, _update=True):
+        self.update_reason(rsid, _update)
         # todo: websocket
 
-    def change_remark(self, text):
-        self.update_remark(text)
+    def change_remark(self, text, _update=True):
+        self.update_remark(text, _update)
         # todo: websocket
 
 
@@ -622,7 +644,8 @@ class EmojiBulkChanger(ft.Container):
             self.reason.content.value = None
             self.remark.content.value = None
 
-            self.page.update()
+            self.update()
+
             self.main.all_deselect()
         
         self.checkbox = ft.Checkbox(
@@ -637,19 +660,54 @@ class EmojiBulkChanger(ft.Container):
             style=ft.TextStyle(italic=True),
         )
 
+        def change_risk_level(e):
+            match self.risk_level.value:
+                case 'risk_0':
+                    level = 0
+                case 'risk_1':
+                    level = 1
+                case 'risk_2':
+                    level = 2
+                case 'risk_3':
+                    level = 3
+                case _:
+                    level = None
+            for i in self.main.selected:
+                i.change_risk_level(level, False)
+            self.main.update()
+            self.update_values()
+
+        def change_reason(e):
+            rsid = self.reason.content.value
+            if self.reason.content.value == 'none':
+                self.reason.content.hint_text = ''
+                self.reason.content.value = None
+                rsid = None
+            for i in self.main.selected:
+                i.change_reason(rsid, False)
+            self.page.update() # instead of self.reason.update() because won't update properly (flet bug?)
+            self.update_values()
+
+        def change_remark(e):
+            text = self.remark.content.value
+            for i in self.main.selected:
+                i.change_remark(text, False)
+            self.main.update()
+            self.update_values()
+
         self.risk_level = ft.RadioGroup(
             content=ft.Row(
                 expand=True,
                 controls=[
-                    ft.Radio(value='risk_0', fill_color={
+                    ft.Radio(value='risk_0', toggleable=True, fill_color={
                         ft.ControlState.DISABLED: '#8b8b8b',
                         ft.ControlState.DEFAULT: '#5bae5b',
                     }),
-                    ft.Radio(value='risk_1', fill_color={
+                    ft.Radio(value='risk_1', toggleable=True, fill_color={
                         ft.ControlState.DISABLED: '#c2c2c2',
                         ft.ControlState.DEFAULT: '#c1d36e',
                     }),
-                    ft.Radio(value='risk_2', fill_color={
+                    ft.Radio(value='risk_2', toggleable=True, fill_color={
                         ft.ControlState.DISABLED: '#ababab',
                         ft.ControlState.DEFAULT: '#cdad4b',
                     }),
@@ -658,7 +716,8 @@ class EmojiBulkChanger(ft.Container):
                         ft.ControlState.DEFAULT: '#cc4444',
                     }),
                 ],
-            )
+            ),
+            on_change=change_risk_level,
         )
         self.reason = ft.Container(
             content=ft.Dropdown(
@@ -668,6 +727,7 @@ class EmojiBulkChanger(ft.Container):
                 filled=True,
                 fill_color='#10ffffff',
                 content_padding=ft.padding.symmetric(horizontal=10),
+                on_change=change_reason,
             ),
             expand=True,
             padding=4,
@@ -679,6 +739,7 @@ class EmojiBulkChanger(ft.Container):
                 filled=True,
                 fill_color='#10ffffff',
                 content_padding=ft.padding.symmetric(horizontal=10),
+                on_change=change_remark,
             ),
             expand=True,
             padding=4,
@@ -763,7 +824,6 @@ class EmojiBulkChanger(ft.Container):
             else:
                 self.checkbox.value = None
         self.update_values()
-        self.page.update()
 
     def update_values(self):
         nsel = len(self.main.selected)
@@ -826,7 +886,7 @@ class EmojiBulkChanger(ft.Container):
 
                 is_common_risk_level = is_common_risk_level and common_risk_level == risk_level
                 is_common_reason = is_common_reason and common_reason == reason
-                is_common_remark = is_common_remark and common_reason == remark
+                is_common_remark = is_common_remark and common_remark == remark
 
                 match risk_level:
                     case 'risk_0':
@@ -840,6 +900,10 @@ class EmojiBulkChanger(ft.Container):
             
             if is_common_risk_level:
                 self.risk_level.value = common_risk_level
+                self.half_risk_0.color = '#005bae5b'
+                self.half_risk_1.color = '#00c1d36e'
+                self.half_risk_2.color = '#00cdad4b'
+                self.half_risk_3.color = '#00cc4444'
             else:
                 self.risk_level.value = None
                 self.half_risk_0.color = '#5bae5b' if contains_risk[0] else '#005bae5b'
@@ -859,6 +923,7 @@ class EmojiBulkChanger(ft.Container):
                 self.remark.content.value = common_remark
             else:
                 self.remark.content.value = '<Mixed>'
+        self.update()
 
 
     def reload_dropdown(self):
@@ -866,5 +931,5 @@ class EmojiBulkChanger(ft.Container):
         for rsid in registry.reasons:
             text = registry.reasons[rsid].text
             self.reason.content.options.append(ft.dropdown.Option(key=rsid, text=text))
-        self.page.update()
+        self.reason.update()
 
