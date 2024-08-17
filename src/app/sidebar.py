@@ -62,6 +62,7 @@ class Sidebar(ft.Container):
         self.buttons: list[SidebarButton] = [
             SidebarButton.create_sidebar_button(Views.EMOJIS, self),
             SidebarButton.create_sidebar_button(Views.USERS, self),
+            SidebarButton.create_sidebar_button(Views.REASONS, self),
         ]
         self.button_logs = SidebarButtonWithBadge.create_sidebar_button(Views.LOGS, self)
         self.buttons_bottom: list[SidebarButton] = [

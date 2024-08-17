@@ -48,6 +48,10 @@ class PanelEmojis(ft.Row):
         self.list_emoji.update()
         self.selected.clear()
 
+    def reload_reasons(self):
+        self.list_emoji.reload_dropdown()
+        self.bulk.reload_dropdown()
+
 
 class EmojiHeader(ft.Container):
     def __init__(self):
@@ -184,6 +188,10 @@ class EmojiList(ft.ListView):
             self.controls.remove(e)
             self.update()
             self.main.count_emojis -= 1
+
+    def reload_dropdown(self):
+        for e in self.emojis.values():
+            e.reload_dropdown()
 
 class EmojiItem(ft.Container):
     def __init__(self, main: PanelEmojis, name: str, category: str, tags: list[str], url: str, is_self_made: bool, license: str, username: str | None, risk_id: str):

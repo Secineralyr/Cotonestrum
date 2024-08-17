@@ -3,6 +3,7 @@ import flet as ft
 from app.sidebar import Sidebar, SidebarArea
 from app.panels.emojis import PanelEmojis
 from app.panels.users import PanelUsers
+from app.panels.reasons import PanelReasons
 from app.panels.settings import PanelSettings
 from app.panels.logs import PanelLogs
 
@@ -24,6 +25,8 @@ class Root(ft.Container):
                 target = self.panel_emojis
             case Views.USERS:
                 target = self.panel_users
+            case Views.REASONS:
+                target = self.panel_reasons
             case Views.SETTINGS:
                 target = self.panel_settings
             case Views.LOGS:
@@ -47,12 +50,14 @@ class Root(ft.Container):
 
         self.panel_emojis = PanelEmojis()
         self.panel_users = PanelUsers()
+        self.panel_reasons = PanelReasons()
         self.panel_settings = PanelSettings()
         self.panel_logs = PanelLogs()
 
         self.panels: list[ft.Control] = [
             self.panel_emojis,
             self.panel_users,
+            self.panel_reasons,
             self.panel_settings,
             self.panel_logs,
         ]
@@ -91,6 +96,7 @@ class Root(ft.Container):
 
         self.page.data['emojis'] = self.panel_emojis
         self.page.data['users'] = self.panel_users
+        self.page.data['reasons'] = self.panel_reasons
         self.page.data['settings'] = self.panel_settings
         self.page.data['logs'] = self.panel_logs
 

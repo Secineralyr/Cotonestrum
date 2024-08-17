@@ -117,11 +117,15 @@ async def reception(ws, page):
                         is_error = False
                     case 'reason_update':
                         registry.put_reason(body['id'], body['text'], body['created_at'], body['updated_at'])
+                        page.data['reasons'].update_reason(body['id'], body['text'])
+                        page.data['emojis'].reload_reasons()
                         log_subject = '理由区分のデータを取得しました'
                         log_text = ''
                         is_error = False
                     case 'reason_delete':
                         registry.pop_reason(body['id'])
+                        page.data['reasons'].remove_reason(body['id'])
+                        page.data['emojis'].reload_reasons()
                         log_subject = '理由区分のデータが削除されました'
                         log_text = ''
                         is_error = False
@@ -185,6 +189,7 @@ async def auth(token, page):
     op = wsmsg.Auth(token)
     create_send_task(op, page, callback_auth, error_auth)
 
+
 async def change_risk_level(rid, level, page):
     global ws
     if ws is None:
@@ -207,3 +212,23 @@ async def change_remark(rid, text, page):
     create_send_task(op, page)
 
 
+async def create_reason(text, page):
+    global ws
+    if ws is None:
+        return
+    op = wsmsg.CreateReason(text)
+    create_send_task(op, page)
+
+async def delete_reason(rsid, page):
+    global ws
+    if ws is None:
+        return
+    op = wsmsg.DeleteReason(rsid)
+    create_send_task(op, page)
+
+async def change_reason_text(rsid, text, page):
+    global ws
+    if ws is None:
+        return
+    op = wsmsg.SetReasonText(rsid, text)
+    create_send_task(op, page)

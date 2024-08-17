@@ -7,6 +7,7 @@ import flet as ft
 class Views(enum.Enum):
     EMOJIS = enum.auto()
     USERS = enum.auto()
+    REASONS = enum.auto()
     SETTINGS = enum.auto()
     LOGS = enum.auto()
 
@@ -14,6 +15,7 @@ class Views(enum.Enum):
 class SidebarButtonInfo(object):
     __EMOJIS = (ft.icons.EMOJI_EMOTIONS_OUTLINED, ft.icons.EMOJI_EMOTIONS, '絵文字一覧')
     __USERS = (ft.icons.PERSON_OUTLINED, ft.icons.PERSON, 'ユーザー情報')
+    __REASONS = (ft.icons.BALLOT_OUTLINED, ft.icons.BALLOT, '理由区分管理')
     __SETTINGS = (ft.icons.SETTINGS_OUTLINED, ft.icons.SETTINGS, '設定')
     __LOGS = (ft.icons.TASK_OUTLINED, ft.icons.TASK, 'ログ/タスク')
 
@@ -24,6 +26,8 @@ class SidebarButtonInfo(object):
                 return cls.__EMOJIS
             case Views.USERS:
                 return cls.__USERS
+            case Views.REASONS:
+                return cls.__REASONS
             case Views.SETTINGS:
                 return cls.__SETTINGS
             case Views.LOGS:

@@ -7,7 +7,7 @@ async def main(page: ft.Page):
     def window_event_handler(e):
         if e.data == 'close':
             page.window.destroy()
-    
+
     page.title = 'misskey.dream Emoji Moderation Tool'
 
     page.window.min_width = 1280
