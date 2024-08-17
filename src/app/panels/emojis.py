@@ -318,9 +318,16 @@ class EmojiItem(ft.Container):
             self.page.update() # instead of self.reason.update() because won't update properly (flet bug?)
             self.change_reason(rsid)
 
+        self._remark = ''
+
+        def focus_remark(e):
+            self._remark = self.remark.content.value
+
         def change_remark(e):
-            text = self.remark.content.value
-            self.change_remark(text)
+            if self._remark != self.remark.content.value:
+                self._remark = self.remark.content.value
+                text = self.remark.content.value
+                self.change_remark(text)
 
         self.risk_level = ft.RadioGroup(
             content=ft.Row(
@@ -357,7 +364,9 @@ class EmojiItem(ft.Container):
                 filled=True,
                 fill_color='#10ffffff',
                 content_padding=ft.padding.symmetric(horizontal=10),
-                on_change=change_remark,
+                on_focus=focus_remark,
+                on_blur=change_remark,
+                on_submit=change_remark,
             ),
             expand=True,
             padding=4,
@@ -686,7 +695,10 @@ class EmojiBulkChanger(ft.Container):
             self.main.update()
             self.update_values()
 
+        self._reason = ''
+
         def change_reason(e):
+            self._reason = self.reason.content.value
             rsid = self.reason.content.value
             if self.reason.content.value == 'none':
                 self.reason.content.hint_text = ''
@@ -697,12 +709,19 @@ class EmojiBulkChanger(ft.Container):
             self.page.update() # instead of self.reason.update() because won't update properly (flet bug?)
             self.update_values()
 
+        self._remark = ''
+
+        def focus_remark(e):
+            self._remark = self.remark.content.value
+
         def change_remark(e):
-            text = self.remark.content.value
-            for i in self.main.selected:
-                i.change_remark(text, False)
-            self.main.update()
-            self.update_values()
+            if self._remark != self.remark.content.value:
+                self._remark = self.remark.content.value
+                text = self.remark.content.value
+                for i in self.main.selected:
+                    i.change_remark(text, False)
+                self.main.update()
+                self.update_values()
 
         self.risk_level = ft.RadioGroup(
             content=ft.Row(
@@ -748,7 +767,9 @@ class EmojiBulkChanger(ft.Container):
                 filled=True,
                 fill_color='#10ffffff',
                 content_padding=ft.padding.symmetric(horizontal=10),
-                on_change=change_remark,
+                on_focus=focus_remark,
+                on_blur=change_remark,
+                on_submit=change_remark,
             ),
             expand=True,
             padding=4,
