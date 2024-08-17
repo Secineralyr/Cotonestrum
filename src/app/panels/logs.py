@@ -10,9 +10,16 @@ class PanelLogs(ft.Container):
 
         self.log_view = ft.ListView(
             expand=True,
-            auto_scroll=True,
             first_item_prototype=True,
             spacing=10,
+        )
+
+        def navigate_to_bottom(e):
+            self.log_view.scroll_to(offset=-1, duration=1000)
+
+        self.button_navigate_to_bottom = ft.FloatingActionButton(
+            icon=ft.icons.KEYBOARD_DOUBLE_ARROW_DOWN_ROUNDED,
+            on_click=navigate_to_bottom, 
         )
 
         self.expand = True
@@ -26,13 +33,59 @@ class PanelLogs(ft.Container):
                     weight=ft.FontWeight.BOLD,
                 ),
                 ft.Container(
-                    content=self.log_view,
+                    content=ft.Stack(
+                        controls=[
+                            self.log_view,
+                            ft.Container(
+                                content=self.button_navigate_to_bottom,
+                            ),
+                        ],
+                        alignment=ft.alignment.bottom_right,
+                    ),
                     expand=True,
                 ),
             ],
         )
-    
+
     def write_log(self, subject: str, text: str, data: dict = None, error: bool = False):
+        if text == '':
+            inner = []
+        else:
+            inner = [
+                ft.Row(
+                    controls=[
+                        ft.Text(
+                            value=text,
+                        ),
+                    ],
+                ),
+                ft.Row(height=3),
+            ]
+        
+        inner.extend(
+            [
+                ft.Text(
+                    value='RAW DATA',
+                    color='#808080',
+                    font_family='M PLUS 1 Code',
+                    size=10,
+                    style=ft.TextStyle(
+                        weight=ft.FontWeight.W_900,
+                    ),
+                    scale=ft.transform.Scale(scale_x=1, scale_y=0.8),
+                ),
+                ft.Row(
+                    controls=[
+                        ft.Text(
+                            value=json.dumps(data, ensure_ascii=False, indent=2, separators=(',', ': ')),
+                            color='#a0a0a0',
+                            font_family='M PLUS 1 Code',
+                        ),
+                    ],
+                ),
+            ]
+        )
+
         item = ft.Row(
             controls=[
                 ft.Container(
@@ -51,34 +104,7 @@ class PanelLogs(ft.Container):
                             ),
                             ft.Container(
                                 content=ft.Column(
-                                    controls=[
-                                        ft.Row(
-                                            controls=[
-                                                ft.Text(
-                                                    value=text,
-                                                ),
-                                            ],
-                                        ),
-                                        ft.Row(height=3),
-                                        ft.Text(
-                                            value='RAW DATA',
-                                            color='#808080',
-                                            font_family='M PLUS 1 Code',
-                                            size=10,
-                                            style=ft.TextStyle(
-                                                weight=ft.FontWeight.W_900,
-                                            ),
-                                            scale=ft.transform.Scale(scale_x=1, scale_y=0.8),
-                                        ),
-                                        ft.Row(
-                                            controls=[
-                                                ft.Text(
-                                                    value=json.dumps(data, ensure_ascii=False, indent=2, separators=(',', ': ')),
-                                                    font_family='M PLUS 1 Code',
-                                                ),
-                                            ],
-                                        ),
-                                    ],
+                                    controls=inner,
                                     expand=True,
                                     spacing=0,
                                     scroll=ft.ScrollMode.AUTO,
@@ -99,6 +125,8 @@ class PanelLogs(ft.Container):
             ],
             height=200,
         )
+        key = str(len(self.log_view.controls))
+        item.key = key
         self.log_view.controls.append(item)
         if error:
             self.page.data['sidebar'].button_logs.increment_badge_value()

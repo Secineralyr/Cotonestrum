@@ -29,6 +29,7 @@ class Root(ft.Container):
             case Views.LOGS:
                 target = self.panel_logs
                 self.sidebar.button_logs.reset_badge_value()
+                self.panel_logs.log_view.scroll_to(offset=-1, duration=0)
         for p in self.panels:
             if p == target:
                 p.visible = True
