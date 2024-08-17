@@ -1,6 +1,14 @@
+import os
+import os.path as osp
+
+import json
+
 import flet as ft
 
 from core import websocket
+
+
+SETTING_FILE_PATH = osp.join(osp.join(osp.join(osp.join(osp.dirname(__file__), os.pardir), os.pardir), os.pardir), 'settings.json')
 
 class PanelSettings(ft.Container):
 
@@ -22,23 +30,7 @@ class PanelSettings(ft.Container):
 
 
         def check_addr(e):
-            if self.is_valid_addrport():
-                self.addr.error_text = None
-                self.button_connect.disabled = False
-            else:
-                self.addr.error_text = '正しいアドレスを入力してください。'
-                self.button_connect.disabled = True
-            self.page.update()
-
-        async def connect(e):
-            if self.connect_state == 0:
-                await websocket.connect(self.addr.value, self.page)
-            elif self.connect_state == 2:
-                await websocket.disconnect(self.page)
-
-        async def auth(e):
-            token = self.mi_token.value
-            await websocket.auth(token, self.page)
+            self.check_addr()
 
         self.addr = ft.TextField(
             label='Emoji Moderation Serverのアドレス',
@@ -61,7 +53,7 @@ class PanelSettings(ft.Container):
             style=ft.ButtonStyle(
                 shape=ft.RoundedRectangleBorder(3)
             ),
-            on_click=connect,
+            on_click=self.connect,
             disabled=True,
         )
         self.status_connection = ft.TextSpan(
@@ -80,7 +72,7 @@ class PanelSettings(ft.Container):
             style=ft.ButtonStyle(
                 shape=ft.RoundedRectangleBorder(3)
             ),
-            on_click=auth,
+            on_click=self.auth,
             disabled=True,
         )
         self.status_perm = ft.TextSpan(
@@ -163,7 +155,63 @@ class PanelSettings(ft.Container):
             alignment=ft.MainAxisAlignment.START,
             scroll=ft.ScrollMode.AUTO,
         )
+
+    def did_mount(self):
+        self.load()
+        self.check_addr()
+        async def connect():
+            if self.is_valid_addrport():
+                await self.connect(None)
+                if self.connect_state == 2:
+                    await self.auth(None)
+        self.page.run_task(connect)
+
+    def save(self):
+        addr = self.addr.value
+        token = self.mi_token.value
+        data = {
+            'addr': addr,
+            'token': token
+        }
+        with open(SETTING_FILE_PATH, 'wt') as fs:
+            json.dump(data, fs, indent=2, separators=(',', ': '))
     
+    def load(self):
+        addr = ''
+        token = ''
+        if osp.isfile(SETTING_FILE_PATH):
+            with open(SETTING_FILE_PATH, 'rt') as fs:
+                data = json.load(fs)
+                if 'addr' in data:
+                    addr = data['addr']
+                    token = data['token']
+        self.addr.value = addr
+        self.mi_token.value = token
+        self.addr.update()
+        self.mi_token.update()
+
+    def check_addr(self):
+        if self.is_valid_addrport():
+            self.addr.error_text = None
+            self.button_connect.disabled = False
+        else:
+            self.addr.error_text = '正しいアドレスを入力してください。'
+            self.button_connect.disabled = True
+        self.addr.update()
+        self.button_connect.update()
+
+    async def connect(self, e):
+        self.save()
+        if self.connect_state == 0:
+            await websocket.connect(self.addr.value, self.page)
+        elif self.connect_state == 2:
+            await websocket.disconnect(self.page)
+
+    async def auth(self, e):
+        self.save()
+        token = self.mi_token.value
+        await websocket.auth(token, self.page)
+
     def is_valid_addrport(self):
         addrp = self.addr.value
 
