@@ -48,6 +48,10 @@ class PanelLogs(ft.Container):
         )
 
     def write_log(self, subject: str, text: str, data: dict = None, error: bool = False):
+        if not error:
+            # More items will take too long to processing.
+            # I want to figure out some way to not need to do this.
+            return
         if text == '':
             inner = []
         else:

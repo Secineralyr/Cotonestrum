@@ -320,10 +320,8 @@ class EmojiItem(ft.Container):
         def change_reason(e):
             rsid = self.reason.content.value
             if self.reason.content.value == 'none':
-                self.reason.content.hint_text = ''
-                self.reason.content.value = None
                 rsid = None
-            self.page.update() # instead of self.reason.update() because won't update properly (flet bug?)
+            self.reason.update()
             self.change_reason(rsid)
 
         self._remark = ''
@@ -352,7 +350,7 @@ class EmojiItem(ft.Container):
         self.reason = ft.Container(
             content=ft.Dropdown(
                 options=[
-                    ft.dropdown.Option(key='none', text='<リセットする>'),
+                    ft.dropdown.Option(key='none', text=' '),
                 ],
                 expand=True,
                 border_color='transparent',
@@ -635,7 +633,7 @@ class EmojiItem(ft.Container):
                 self.main.bulk.update_values()
 
     def reload_dropdown(self):
-        self.reason.content.options = [ft.dropdown.Option(key='none', text='<リセットする>')]
+        self.reason.content.options = [ft.dropdown.Option(key='none', text=' ')]
         for rsid in registry.reasons:
             text = registry.reasons[rsid].text
             self.reason.content.options.append(ft.dropdown.Option(key=rsid, text=text))
@@ -703,18 +701,13 @@ class EmojiBulkChanger(ft.Container):
             self.main.update()
             self.update_values()
 
-        self._reason = ''
-
         def change_reason(e):
-            self._reason = self.reason.content.value
             rsid = self.reason.content.value
             if self.reason.content.value == 'none':
-                self.reason.content.hint_text = ''
-                self.reason.content.value = None
                 rsid = None
             for i in self.main.selected:
-                i.change_reason(rsid, False)
-            self.page.update() # instead of self.reason.update() because won't update properly (flet bug?)
+                i.change_reason(rsid)
+            self.reason.update()
             self.update_values()
 
         self._remark = ''
@@ -757,7 +750,7 @@ class EmojiBulkChanger(ft.Container):
         )
         self.reason = ft.Container(
             content=ft.Dropdown(
-                options=[ft.dropdown.Option(key='none', text='<リセットする>')],
+                options=[ft.dropdown.Option(key='none', text=' ')],
                 expand=True,
                 border_color='transparent',
                 filled=True,
@@ -965,7 +958,7 @@ class EmojiBulkChanger(ft.Container):
 
 
     def reload_dropdown(self):
-        self.reason.content.options = [ft.dropdown.Option(key='none', text='<リセットする>')]
+        self.reason.content.options = [ft.dropdown.Option(key='none', text=' ')]
         for rsid in registry.reasons:
             text = registry.reasons[rsid].text
             self.reason.content.options.append(ft.dropdown.Option(key=rsid, text=text))

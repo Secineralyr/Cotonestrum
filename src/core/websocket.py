@@ -201,6 +201,8 @@ def change_reason(rid, rsid, page):
     global ws
     if ws is None:
         return
+    if rsid == '':
+        rsid = None
     op = wsmsg.SetRiskProp(rid, rsid=rsid)
     create_send_task(op, page)
 
