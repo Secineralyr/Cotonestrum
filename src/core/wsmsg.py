@@ -143,7 +143,7 @@ class FetchAllReasons(IWSOperation):
 
 
 class SetRiskProp(IWSOperation):
-    def __init__(self, rid, checked=-1, level=-1, rsid=None, remark=None) -> None:
+    def __init__(self, rid, checked=-1, level=-1, rsid=-1, remark=-1) -> None:
         super().__init__('set_risk_prop')
         self.id = rid
         props = {}
@@ -151,9 +151,9 @@ class SetRiskProp(IWSOperation):
             props['checked'] = checked
         if level in [None, 0, 1, 2, 3]:
             props['level'] = level
-        if rsid is not None:
+        if rsid != -1:
             props['reason_id'] = rsid
-        if remark is not None:
+        if remark != -1:
             props['remark'] = remark
         self.props = props
 
