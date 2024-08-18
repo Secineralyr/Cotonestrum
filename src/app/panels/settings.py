@@ -1,4 +1,3 @@
-import os
 import os.path as osp
 
 import json
@@ -8,7 +7,7 @@ import flet as ft
 from core import websocket
 
 
-SETTING_FILE_PATH = osp.join(osp.join(osp.join(osp.join(osp.dirname(__file__), os.pardir), os.pardir), os.pardir), 'settings.json')
+SETTING_FILE_PATH = osp.join(osp.abspath('.'), 'settings.json')
 
 class PanelSettings(ft.Container):
 
