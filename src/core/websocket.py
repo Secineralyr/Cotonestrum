@@ -66,7 +66,7 @@ async def reception(ws, page):
                     log_text = f"操作: {body['op']}"
                     is_error = False
                     if 'callback' in operation:
-                        ret = await operation['callback'](body, page)
+                        ret = operation['callback'](body, page)
                         if ret is not None:
                             log_subject, log_text = ret
                 elif op == 'denied':
@@ -82,7 +82,7 @@ async def reception(ws, page):
                     log_text = f"操作: {body['op']}\n追記: {body['message']}"
                     is_error = True
                     if 'error' in operation:
-                        ret = await operation['error'](body, data['op'], page)
+                        ret = operation['error'](body, data['op'], page)
                         if ret is not None:
                             log_subject, log_text = ret
                 page.data['logs'].write_log(log_subject, log_text, data, is_error)
@@ -157,13 +157,13 @@ async def reception(ws, page):
             traceback.print_exc()
 
 
-async def auth(token, page):
+def auth(token, page):
     global ws
     if ws is None:
         return
     page.data['settings'].set_auth_state(1)
 
-    async def callback_auth(body, page):
+    def callback_auth(body, page):
         permitted = False
         match body['message']:
             case "You logged in as 'User'.":
@@ -183,28 +183,28 @@ async def auth(token, page):
             create_send_task(wsmsg.FetchAllRisks(), page)
             create_send_task(wsmsg.FetchAllReasons(), page)
     
-    async def error_auth(body, err, page):
+    def error_auth(body, err, page):
         page.data['settings'].set_auth_state(0)
 
     op = wsmsg.Auth(token)
     create_send_task(op, page, callback_auth, error_auth)
 
 
-async def change_risk_level(rid, level, page):
+def change_risk_level(rid, level, page):
     global ws
     if ws is None:
         return
     op = wsmsg.SetRiskProp(rid, level=level)
     create_send_task(op, page)
 
-async def change_reason(rid, rsid, page):
+def change_reason(rid, rsid, page):
     global ws
     if ws is None:
         return
     op = wsmsg.SetRiskProp(rid, rsid=rsid)
     create_send_task(op, page)
 
-async def change_remark(rid, text, page):
+def change_remark(rid, text, page):
     global ws
     if ws is None:
         return
@@ -212,21 +212,21 @@ async def change_remark(rid, text, page):
     create_send_task(op, page)
 
 
-async def create_reason(text, page):
+def create_reason(text, page):
     global ws
     if ws is None:
         return
     op = wsmsg.CreateReason(text)
     create_send_task(op, page)
 
-async def delete_reason(rsid, page):
+def delete_reason(rsid, page):
     global ws
     if ws is None:
         return
     op = wsmsg.DeleteReason(rsid)
     create_send_task(op, page)
 
-async def change_reason_text(rsid, text, page):
+def change_reason_text(rsid, text, page):
     global ws
     if ws is None:
         return

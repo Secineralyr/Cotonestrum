@@ -18,10 +18,10 @@ class PanelReasons(ft.Container):
             locked = not self.lock.value
             self.set_locked(locked)
 
-        async def create_reason(e):
+        def create_reason(e):
             text = self.tf_adding.value
             if text != '':
-                await websocket.create_reason(text, self.page)
+                websocket.create_reason(text, self.page)
 
         self.lock = ft.Switch(
             label='',
@@ -150,14 +150,14 @@ class ReasonItem(ft.Row):
         def focus_text(e):
             self._text = self.text.value
 
-        async def change_text(e):
+        def change_text(e):
             if self._text != self.text.value:
                 self._text = self.text.value
                 text = self.text.value
-                await websocket.change_reason_text(rsid, text, self.page)
+                websocket.change_reason_text(rsid, text, self.page)
 
-        async def delete(e):
-            await websocket.delete_reason(rsid, self.page)
+        def delete(e):
+            websocket.delete_reason(rsid, self.page)
 
         self.text = ft.TextField(
             value=text,

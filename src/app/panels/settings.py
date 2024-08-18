@@ -163,7 +163,7 @@ class PanelSettings(ft.Container):
             if self.is_valid_addrport():
                 await self.connect(None)
                 if self.connect_state == 2:
-                    await self.auth(None)
+                    self.auth(None)
         self.page.run_task(connect)
 
     def save(self):
@@ -207,10 +207,10 @@ class PanelSettings(ft.Container):
         elif self.connect_state == 2:
             await websocket.disconnect(self.page)
 
-    async def auth(self, e):
+    def auth(self, e):
         self.save()
         token = self.mi_token.value
-        await websocket.auth(token, self.page)
+        websocket.auth(token, self.page)
 
     def is_valid_addrport(self):
         addrp = self.addr.value

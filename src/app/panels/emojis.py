@@ -643,15 +643,15 @@ class EmojiItem(ft.Container):
 
     def change_risk_level(self, level, _update=True):
         self.update_risk_level(level, _update)
-        self.page.run_task(websocket.change_risk_level, self.risk_id, level, self.page)
+        websocket.change_risk_level(self.risk_id, level, self.page)
 
     def change_reason(self, rsid, _update=True):
         self.update_reason(rsid, _update)
-        self.page.run_task(websocket.change_reason, self.risk_id, rsid, self.page)
+        websocket.change_reason(self.risk_id, rsid, self.page)
 
     def change_remark(self, text, _update=True):
         self.update_remark(text, _update)
-        self.page.run_task(websocket.change_remark, self.risk_id, text, self.page)
+        websocket.change_remark(self.risk_id, text, self.page)
 
 
 
@@ -847,7 +847,7 @@ class EmojiBulkChanger(ft.Container):
                 ),
             ]
         )
-    
+
     def update_selected(self):
         nsel = len(self.main.selected)
 
