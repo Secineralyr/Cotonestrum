@@ -232,19 +232,20 @@ class PanelSettings(ft.Container):
         if port < 1 or port > 65535:
             return False
 
-        w = a.split('.')
-        if len(w) != 4:
-            return False
-        
-        try:
-            words = [int(i) for i in w]
-        except ValueError:
-            return False
-        
-        for word in words:
-            if word < 0 or word > 255:
+        if a != 'localhost':
+            w = a.split('.')
+            if len(w) != 4:
                 return False
-        
+            
+            try:
+                words = [int(i) for i in w]
+            except ValueError:
+                return False
+            
+            for word in words:
+                if word < 0 or word > 255:
+                    return False
+            
         return True
     
     def set_connect_state(self, state: int):
