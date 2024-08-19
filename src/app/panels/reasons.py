@@ -120,7 +120,7 @@ class PanelReasons(ft.Container):
     def update_reason(self, rsid, text):
         target: ReasonItem | None = None
         for item in self.list_reason.controls:
-            if item.key == rsid:
+            if item.rsid == rsid:
                 target = item
                 break
         if target is not None:
@@ -132,7 +132,7 @@ class PanelReasons(ft.Container):
     def remove_reason(self, rsid):
         target: ReasonItem | None = None
         for item in self.list_reason.controls:
-            if item.key == rsid:
+            if item.rsid == rsid:
                 target = item
                 break
         if target is not None:
@@ -145,6 +145,7 @@ class ReasonItem(ft.Row):
     def __init__(self, rsid, text, locked):
         super().__init__()
 
+        self.rsid = rsid
         self._text = text
 
         def focus_text(e):
@@ -185,7 +186,6 @@ class ReasonItem(ft.Row):
             self.button_delete,
         ]
         self.alignment = ft.MainAxisAlignment.CENTER
-        self.key = rsid
     
     def set_reason_text(self, text):
         self._text = text
