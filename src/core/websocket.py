@@ -94,12 +94,7 @@ async def reception(ws, page):
                         log_text = ''
                         is_error = False
                     case 'emoji_update':
-                        tags = body['tags']
-                        if tags == '':
-                            ltags = []
-                        else:
-                            ltags = tags.split(' ')
-                        registry.put_emoji(body['id'], body['misskey_id'], body['name'], body['category'], ltags, body['url'], body['is_self_made'], body['license'], body['owner_id'], body['risk_id'], body['created_at'], body['updated_at'])
+                        registry.put_emoji(body['id'], body['misskey_id'], body['name'], body['category'], body['tags'], body['url'], body['is_self_made'], body['license'], body['owner_id'], body['risk_id'], body['created_at'], body['updated_at'])
                         page.data['emojis'].list_emoji.update_emoji(body['id'])
                         log_subject = '絵文字のデータを取得しました'
                         log_text = ''
