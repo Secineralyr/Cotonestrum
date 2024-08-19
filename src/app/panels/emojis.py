@@ -189,6 +189,15 @@ class EmojiList(ft.ListView):
             self.update()
             self.main.count_emojis -= 1
 
+    def reload_risk(self, rid: str):
+        for e in self.emojis.values():
+            if e.risk_id == rid:
+                risk = registry.get_risk(rid)
+                level = risk.level
+                reason = risk.reason_genre
+                remark = risk.remark
+                e.update_risk(level, reason, remark)
+
     def reload_dropdown(self):
         for e in self.emojis.values():
             e.reload_dropdown()
