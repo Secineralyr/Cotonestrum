@@ -106,7 +106,13 @@ async def reception(ws, page):
                         log_text = ''
                         is_error = False
                     case 'risk_update':
-                        registry.put_risk(body['id'], body['checked'], body['level'], body['reason_genre'], body['remark'], body['created_at'], body['updated_at'])
+                        rid = body['id']
+                        rr = False
+                        if rid in registry.risks:
+                            rr = True
+                        registry.put_risk(rid, body['checked'], body['level'], body['reason_genre'], body['remark'], body['created_at'], body['updated_at'])
+                        if rr:
+                            page.data['emojis'].list_emoji.reload_risk(rid)
                         log_subject = 'リスクのデータを取得しました'
                         log_text = ''
                         is_error = False
