@@ -93,15 +93,35 @@ async def reception(ws, page):
                         log_subject = 'ユーザーのデータを取得しました'
                         log_text = ''
                         is_error = False
+                    case 'users_update':
+                        for i in body:
+                            registry.put_user(i['id'], i['misskey_id'], i['username'])
+                        log_subject = '複数のユーザーのデータを取得しました'
+                        log_text = ''
+                        is_error = False
                     case 'emoji_update':
                         registry.put_emoji(body['id'], body['misskey_id'], body['name'], body['category'], body['tags'], body['url'], body['is_self_made'], body['license'], body['owner_id'], body['risk_id'], body['created_at'], body['updated_at'])
                         page.data['emojis'].list_emoji.update_emoji(body['id'])
                         log_subject = '絵文字のデータを取得しました'
                         log_text = ''
                         is_error = False
+                    case 'emojis_update':
+                        for i in body:
+                            registry.put_emoji(i['id'], i['misskey_id'], i['name'], i['category'], i['tags'], i['url'], i['is_self_made'], i['license'], i['owner_id'], i['risk_id'], i['created_at'], i['updated_at'])
+                        page.data['emojis'].list_emoji.update_emojis([i['id'] for i in body])
+                        log_subject = '絵文字のデータを取得しました'
+                        log_text = ''
+                        is_error = False
                     case 'emoji_delete':
                         registry.pop_emoji(body['id'])
                         page.data['emojis'].list_emoji.delete_emoji(body['id'])
+                        log_subject = '絵文字のデータが削除されました'
+                        log_text = ''
+                        is_error = False
+                    case 'emojis_delete':
+                        for i in body['ids']:
+                            registry.pop_emoji(i)
+                        page.data['emojis'].list_emoji.delete_emojis([i for i in body['ids']])
                         log_subject = '絵文字のデータが削除されました'
                         log_text = ''
                         is_error = False
@@ -116,6 +136,12 @@ async def reception(ws, page):
                         log_subject = 'リスクのデータを取得しました'
                         log_text = ''
                         is_error = False
+                    case 'risks_update':
+                        for i in body:
+                            registry.put_risk(i['id'], i['checked'], i['level'], i['reason_genre'], i['remark'], i['created_at'], i['updated_at'])
+                        log_subject = 'リスクのデータを取得しました'
+                        log_text = ''
+                        is_error = False
                     case 'reason_update':
                         registry.put_reason(body['id'], body['text'], body['created_at'], body['updated_at'])
                         page.data['reasons'].update_reason(body['id'], body['text'])
@@ -123,9 +149,25 @@ async def reception(ws, page):
                         log_subject = '理由区分のデータを取得しました'
                         log_text = ''
                         is_error = False
+                    case 'reasons_update':
+                        for i in body:
+                            registry.put_reason(i['id'], i['text'], i['created_at'], i['updated_at'])
+                            page.data['reasons'].update_reason(i['id'], i['text'])
+                        page.data['emojis'].reload_reasons()
+                        log_subject = '理由区分のデータを取得しました'
+                        log_text = ''
+                        is_error = False
                     case 'reason_delete':
                         registry.pop_reason(body['id'])
                         page.data['reasons'].remove_reason(body['id'])
+                        page.data['emojis'].reload_reasons()
+                        log_subject = '理由区分のデータが削除されました'
+                        log_text = ''
+                        is_error = False
+                    case 'reasons_delete':
+                        for i in body['ids']:
+                            registry.pop_reason(i)
+                            page.data['reasons'].remove_reason(i)
                         page.data['emojis'].reload_reasons()
                         log_subject = '理由区分のデータが削除されました'
                         log_text = ''

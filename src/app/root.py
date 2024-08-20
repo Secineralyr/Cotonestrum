@@ -14,31 +14,40 @@ class Root(ft.Container):
 
     __current_view = None
 
+    def get_panel(self, value: Views):
+        match value:
+            case Views.EMOJIS:
+                return self.panel_emojis
+            case Views.USERS:
+                return self.panel_users
+            case Views.REASONS:
+                return self.panel_reasons
+            case Views.SETTINGS:
+                return self.panel_settings
+            case Views.LOGS:
+                return self.panel_logs
+
     @property
     def current_view(self) -> Views:
         return self.__current_view
     
     def navigate(self, value: Views):
+        bvalue = self.__current_view
         self.__current_view = value
-        match value:
-            case Views.EMOJIS:
-                target = self.panel_emojis
-            case Views.USERS:
-                target = self.panel_users
-            case Views.REASONS:
-                target = self.panel_reasons
-            case Views.SETTINGS:
-                target = self.panel_settings
-            case Views.LOGS:
-                target = self.panel_logs
+        if bvalue != value:
+            target = self.get_panel(value)
+            if value == Views.LOGS:
                 self.sidebar.button_logs.reset_badge_value()
                 self.panel_logs.log_view.scroll_to(offset=-1, duration=0)
-        for p in self.panels:
-            if p == target:
-                p.visible = True
-            else:
-                p.visible = False
-        self.page.update()
+
+            before = self.get_panel(bvalue)
+
+            if before is not None:
+                before.visible = False
+                before.update()
+            if target is not None:
+                target.visible = True
+                target.update()
 
     def __init__(self):
         super().__init__()

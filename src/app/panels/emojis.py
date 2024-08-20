@@ -141,7 +141,7 @@ class EmojiList(ft.ListView):
 
         self.controls = []
     
-    def update_emoji(self, eid: str):
+    def update_emoji(self, eid: str, _update=True):
         emoji_data = registry.get_emoji(eid)
         if emoji_data is None:
             print(f"Emoji '{eid}' couldn't found in registry.")
@@ -176,18 +176,30 @@ class EmojiList(ft.ListView):
             self.emojis[eid] = e
 
             self.controls.append(e)
-            self.update()
+            if _update:
+                self.update()
             self.main.count_emojis += 1
     
-    def delete_emoji(self, eid: str):
+    def update_emojis(self, eids: list[str]):
+        for eid in eids:
+            self.update_emoji(eid, False)
+        self.update()
+
+    def delete_emoji(self, eid: str, _update=True):
         if eid in self.emojis:
             e = self.emojis[eid]
             if e.checkbox.value:
                 e.toggle_selected(None)
             
             self.controls.remove(e)
-            self.update()
+            if _update:
+                self.update()
             self.main.count_emojis -= 1
+
+    def delete_emojis(self, eids: list[str]):
+        for eid in eids:
+            self.delete_emoji(eid, False)
+        self.update()
 
     def reload_risk(self, rid: str):
         for e in self.emojis.values():
