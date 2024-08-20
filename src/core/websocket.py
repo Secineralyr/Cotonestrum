@@ -22,7 +22,7 @@ async def connect(server_host, page):
         server_host += ':3005'
     try:
         uri = f'ws://{server_host}/'
-        ws = await websockets.connect(uri)
+        ws = await websockets.connect(uri, max_size=None)
     except (OSError, TimeoutError, websockets.exceptions.InvalidURI, websockets.exceptions.InvalidHandshake):
         traceback.print_exc()
         print('websocket connection could not opened')
