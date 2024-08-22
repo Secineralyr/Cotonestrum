@@ -8,7 +8,7 @@ async def main(page: ft.Page):
         if e.data == 'close':
             page.window.destroy()
 
-    page.title = 'misskey.dream Emoji Moderation Tool'
+    page.title = 'Cotonestrum'
 
     page.window.min_width = 1280
     page.window.min_height = 720
@@ -28,7 +28,7 @@ async def main(page: ft.Page):
     page.window.on_event = window_event_handler
 
     page.data = {}
-    
+
     root = Root()
 
     page.data['root'] = root
