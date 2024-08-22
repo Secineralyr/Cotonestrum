@@ -104,6 +104,16 @@ class Sidebar(ft.Container):
         self.sidebar_area.toggle_extended(extend)
         self.update()
     
+    def lock_buttons(self):
+        for button in [*self.buttons, *self.buttons_bottom]:
+            button.locked = True
+            button.update()
+
+    def unlock_buttons(self):
+        for button in [*self.buttons, *self.buttons_bottom]:
+            button.locked = False
+            button.update()
+
 
 
 
@@ -121,6 +131,8 @@ class SidebarButton(ft.Container):
     ):
         super().__init__(**kwargs)
 
+        self._locked = False
+
         self.target = target
         self.sidebar = sidebar
         self._selected = selected
@@ -132,10 +144,11 @@ class SidebarButton(ft.Container):
         self._text = text
 
         def change_view(e):
-            self.page.data['root'].navigate(self.target)
-            for button in [*self.sidebar.buttons, *self.sidebar.buttons_bottom]:
-                button.selected = button.target == self.target
-                button.update()
+            if not self.locked:
+                self.page.data['root'].navigate(self.target)
+                for button in [*self.sidebar.buttons, *self.sidebar.buttons_bottom]:
+                    button.selected = button.target == self.target
+                    button.update()
 
         self.height = CONST_SIDEBAR.BUTTON_HEIGHT
         self.width = CONST_SIDEBAR.WIDTH_COLLAPSED
@@ -175,6 +188,20 @@ class SidebarButton(ft.Container):
         return cls(view, sidebar, *info, selected)
     
     @property
+    def locked(self) -> bool:
+        return self._locked
+    
+    @locked.setter
+    def locked(self, value: bool):
+        if self._locked != value:
+            self._locked = value
+            if value:
+                self.icon_content.content.color = '#808080'
+            else:
+                self.icon_content.content.color = '#a0cafd'
+            self.icon_content.update()
+
+    @property
     def icon(self) -> Optional[str]:
         return self._icon
     
@@ -184,7 +211,7 @@ class SidebarButton(ft.Container):
             self._icon = value
             self.icon_content.content.name = value
             self.icon_content.update()
-    
+
     @property
     def text(self) -> Optional[str]:
         return self._text
@@ -237,6 +264,20 @@ class SidebarButtonWithBadge(SidebarButton):
             offset=ft.Offset(0, 10),
             label_visible=False,
         )
+
+    @property
+    def locked(self) -> bool:
+        return self._locked
+    
+    @locked.setter
+    def locked(self, value: bool):
+        if self._locked != value:
+            self._locked = value
+            if value:
+                self.icon_content.content.content.color = '#808080'
+            else:
+                self.icon_content.content.content.color = '#a0cafd'
+            self.icon_content.update()
 
     @property
     def icon(self) -> Optional[str]:

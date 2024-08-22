@@ -9,6 +9,8 @@ import websockets.exceptions
 from core import wsmsg
 from core import registry
 
+from app.misc.loadingring import LoadingRing
+
 ws = None
 task = None
 pending = {}
@@ -53,6 +55,10 @@ def create_send_task(op, page, callback = None, error_callback = None):
     page.run_task(ws.send, msg)
 
 async def reception(ws, page):
+    from app.panels.emojis import PanelEmojis
+    from app.panels.logs import PanelLogs
+    panel_emojis: PanelEmojis = page.data['emojis']
+    panel_logs: PanelLogs = page.data['logs']
     while True:
         try:
             data = json.loads(await ws.recv())
@@ -85,7 +91,7 @@ async def reception(ws, page):
                         ret = operation['error'](body, data['op'], page)
                         if ret is not None:
                             log_subject, log_text = ret
-                page.data['logs'].write_log(log_subject, log_text, data, is_error)
+                panel_logs.write_log(log_subject, log_text, data, is_error)
             elif reqid is None:
                 match op:
                     case 'user_update':
@@ -101,27 +107,27 @@ async def reception(ws, page):
                         is_error = False
                     case 'emoji_update':
                         registry.put_emoji(body['id'], body['misskey_id'], body['name'], body['category'], body['tags'], body['url'], body['is_self_made'], body['license'], body['owner_id'], body['risk_id'], body['created_at'], body['updated_at'])
-                        page.data['emojis'].list_emoji.update_emoji(body['id'])
+                        panel_emojis.add_emoji(body['id'])
                         log_subject = '絵文字のデータを取得しました'
                         log_text = ''
                         is_error = False
                     case 'emojis_update':
                         for i in body:
                             registry.put_emoji(i['id'], i['misskey_id'], i['name'], i['category'], i['tags'], i['url'], i['is_self_made'], i['license'], i['owner_id'], i['risk_id'], i['created_at'], i['updated_at'])
-                        page.data['emojis'].list_emoji.update_emojis([i['id'] for i in body])
+                        panel_emojis.add_emojis([i['id'] for i in body])
                         log_subject = '絵文字のデータを取得しました'
                         log_text = ''
                         is_error = False
                     case 'emoji_delete':
                         registry.pop_emoji(body['id'])
-                        page.data['emojis'].list_emoji.delete_emoji(body['id'])
+                        panel_emojis.remove_emoji(body['id'])
                         log_subject = '絵文字のデータが削除されました'
                         log_text = ''
                         is_error = False
                     case 'emojis_delete':
                         for i in body['ids']:
                             registry.pop_emoji(i)
-                        page.data['emojis'].list_emoji.delete_emojis([i for i in body['ids']])
+                        panel_emojis.remove_emoji([i for i in body['ids']])
                         log_subject = '絵文字のデータが削除されました'
                         log_text = ''
                         is_error = False

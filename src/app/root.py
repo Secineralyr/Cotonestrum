@@ -8,6 +8,7 @@ from app.panels.settings import PanelSettings
 from app.panels.logs import PanelLogs
 
 from app.views import Views
+from app.misc.loadingring import LoadingRing
 
 
 class Root(ft.Container):
@@ -36,11 +37,16 @@ class Root(ft.Container):
         self.__current_view = value
         if bvalue != value:
             target = self.get_panel(value)
+            before = self.get_panel(bvalue)
+
+            if value == Views.EMOJIS:
+                self.panel_emojis.load_next()
             if value == Views.LOGS:
                 self.sidebar.button_logs.reset_badge_value()
                 self.panel_logs.log_view.scroll_to(offset=-1, duration=0)
 
-            before = self.get_panel(bvalue)
+            if bvalue == Views.EMOJIS:
+                self.panel_emojis.list_emoji.delete_all_emojis()
 
             if before is not None:
                 before.visible = False
@@ -74,31 +80,42 @@ class Root(ft.Container):
         for p in self.panels:
             p.visible = False
 
+        self.loading = LoadingRing()
+
         self.content = ft.Stack(
             controls=[
-                ft.Row(
+                ft.Stack(
                     controls=[
+                        ft.Row(
+                            controls=[
+                                ft.Container(
+                                    content=self.sidebar_area,
+                                    margin=10,
+                                ),
+                                ft.VerticalDivider(width=1),
+                                ft.Container(
+                                    content=ft.Stack(
+                                        controls=self.panels,
+                                    ),
+                                    expand=True,
+                                ),
+                            ],
+                            spacing=0,
+                        ),
                         ft.Container(
-                            content=self.sidebar_area,
+                            content=self.sidebar,
                             margin=10,
                         ),
-                        ft.VerticalDivider(width=1),
-                        ft.Container(
-                            content=ft.Stack(
-                                controls=self.panels,
-                            ),
-                            expand=True,
-                        ),
                     ],
-                    spacing=0,
+                    expand=True
                 ),
                 ft.Container(
-                    content=self.sidebar,
-                    margin=10,
-                ),
+                    content=self.loading,
+                )
             ],
-            expand=True
+            alignment=ft.alignment.bottom_right
         )
+        
     
     def did_mount(self):
         self.page.data['sidebar'] = self.sidebar
@@ -108,6 +125,8 @@ class Root(ft.Container):
         self.page.data['reasons'] = self.panel_reasons
         self.page.data['settings'] = self.panel_settings
         self.page.data['logs'] = self.panel_logs
+
+        self.page.data['loading'] = self.loading
 
 
 

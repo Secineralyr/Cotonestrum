@@ -5,12 +5,18 @@ from core import registry
 from core import websocket
 
 from app.utils.util import SizeAwareControl
+from app.misc.loadingring import LoadingRing
+from app.sidebar import Sidebar
 
 
 class PanelEmojis(ft.Row):
 
     def __init__(self):
         super().__init__()
+
+        self._locks = 0
+
+        self.all_emojis = {} # Use dict with value=None because python doesn't has ordered set.
 
         self.selected: set[EmojiItem] = set()
         self.count_emojis = 0
@@ -20,6 +26,8 @@ class PanelEmojis(ft.Row):
 
         self.expand = True
         self.scroll = ft.ScrollMode.ALWAYS
+
+        self.loading = False
 
         self.controls = [
             ft.Container(
@@ -38,6 +46,58 @@ class PanelEmojis(ft.Row):
                 ),
             ),
         ]
+
+    def add_emoji(self, eid: str):
+        self.all_emojis[eid] = None
+
+    def remove_emoji(self, eid: str):
+        if eid in self.all_emojis:
+            self.list_emoji.delete_emoji(eid)
+            del self.all_emojis[eid]
+
+    def add_emojis(self, eids: list[str]):
+        for eid in eids:
+            self.all_emojis[eid] = None
+
+    def remove_emojis(self, eids: list[str]):
+        eeids = []
+        for eid in eids:
+            if eid in self.all_emojis:
+                eeids.append(eid)
+        self.list_emoji.delete_emojis(eeids)
+        for eid in eeids:
+            del self.all_emojis[eid]
+
+    def lock(self):
+        lr: LoadingRing = self.page.data['loading']
+        sidebar: Sidebar = self.page.data['sidebar']
+        sidebar.lock_buttons()
+        lr.show()
+        self._locks += 1
+
+    def unlock(self):
+        lr: LoadingRing = self.page.data['loading']
+        sidebar: Sidebar = self.page.data['sidebar']
+        lr.hide()
+        self._locks -= 1
+        if self._locks == 0:
+            sidebar.unlock_buttons()
+
+    def load_next(self, count=50):
+        if self.loading: return
+        self.loading = True
+        self.lock()
+        if len(self.list_emoji.controls) > 0:
+            if isinstance(self.list_emoji.controls[-1], MoreLoad):
+                del self.list_emoji.controls[-1]
+        eids = [eid for eid in self.all_emojis if eid not in self.list_emoji.emojis.keys()]
+        if len(eids) > count:
+            eids = eids[:count]
+        self.list_emoji.update_emojis(eids, False)
+        self.list_emoji.controls.append(MoreLoad(self))
+        self.list_emoji.update()
+        self.unlock()
+        self.loading = False
 
     def update_selected(self):
         self.bulk.update_selected()
@@ -139,8 +199,10 @@ class EmojiList(ft.ListView):
 
         self.expand = True
 
+        self.item_extent = 50
+
         self.controls = []
-    
+
     def update_emoji(self, eid: str, _update=True):
         emoji_data = registry.get_emoji(eid)
         if emoji_data is None:
@@ -179,11 +241,12 @@ class EmojiList(ft.ListView):
             if _update:
                 self.update()
             self.main.count_emojis += 1
-    
-    def update_emojis(self, eids: list[str]):
+
+    def update_emojis(self, eids: list[str], _update=True):
         for eid in eids:
             self.update_emoji(eid, False)
-        self.update()
+        if _update:
+            self.update()
 
     def delete_emoji(self, eid: str, _update=True):
         if eid in self.emojis:
@@ -194,10 +257,16 @@ class EmojiList(ft.ListView):
             self.controls.remove(e)
             if _update:
                 self.update()
+            del self.emojis[eid]
             self.main.count_emojis -= 1
 
     def delete_emojis(self, eids: list[str]):
         for eid in eids:
+            self.delete_emoji(eid, False)
+        self.update()
+
+    def delete_all_emojis(self):
+        for eid in list(self.emojis.keys()):
             self.delete_emoji(eid, False)
         self.update()
 
@@ -657,6 +726,38 @@ class EmojiItem(ft.Container):
         self.update_remark(text, _update)
         websocket.change_remark(self.risk_id, text, self.page)
 
+class MoreLoad(ft.Container):
+    def __init__(self, main: PanelEmojis):
+        super().__init__()
+
+        self.main = main
+        
+        self.ink = True
+
+        def on_click(e):
+            self.load()
+
+        self.on_click = on_click
+
+        self.height = 50
+        self.expand = True
+
+        self.content = ft.Row(
+            expand=True,
+            spacing=0,
+            controls=[
+                ft.Container(
+                    expand=True,
+                    content=ft.Text(
+                        value='更に読み込む',
+                        text_align=ft.TextAlign.CENTER,
+                    ),
+                ),
+            ],
+        )
+
+    def load(self):
+        self.main.load_next()
 
 
 class EmojiBulkChanger(ft.Container):
@@ -668,6 +769,8 @@ class EmojiBulkChanger(ft.Container):
         def all_deselect(e):
             self.disabled = True
 
+            self.main.lock()
+
             self.select_counter.value = '== 0 emojis selected. =='
             self.checkbox.value = False
             self.risk_level.value = None
@@ -677,6 +780,8 @@ class EmojiBulkChanger(ft.Container):
             self.update()
 
             self.main.all_deselect()
+
+            self.main.unlock()
         
         self.checkbox = ft.Checkbox(
             label='',
@@ -691,6 +796,7 @@ class EmojiBulkChanger(ft.Container):
         )
 
         def change_risk_level(e):
+            self.main.lock()
             match self.risk_level.value:
                 case 'risk_0':
                     level = 0
@@ -706,8 +812,10 @@ class EmojiBulkChanger(ft.Container):
                 i.change_risk_level(level, False)
             self.main.update()
             self.update_values()
+            self.main.unlock()
 
         def change_reason(e):
+            self.main.lock()
             rsid = self.reason.content.value
             if self.reason.content.value == 'none':
                 rsid = None
@@ -715,6 +823,7 @@ class EmojiBulkChanger(ft.Container):
                 i.change_reason(rsid)
             self.reason.update()
             self.update_values()
+            self.main.unlock()
 
         self._remark = ''
 
@@ -722,6 +831,7 @@ class EmojiBulkChanger(ft.Container):
             self._remark = self.remark.content.value
 
         def change_remark(e):
+            self.main.lock()
             if self._remark != self.remark.content.value:
                 self._remark = self.remark.content.value
                 text = self.remark.content.value
@@ -729,6 +839,7 @@ class EmojiBulkChanger(ft.Container):
                     i.change_remark(text, False)
                 self.main.update()
                 self.update_values()
+            self.main.unlock()
 
         self.risk_level = ft.RadioGroup(
             content=ft.Row(
