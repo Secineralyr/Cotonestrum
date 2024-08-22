@@ -51,6 +51,7 @@ class PanelSettings(ft.Container):
         self.switch_tooltip = ft.Switch(
             label='ツールチップ表示',
             value=True,
+            splash_radius=0,
             on_change=toggle_tooltip,
         )
 
@@ -113,6 +114,13 @@ class PanelSettings(ft.Container):
                     weight=ft.FontWeight.BOLD,
                 ),
                 ft.Container(height=10),
+                ft.Text(
+                    value='サーバー接続',
+                    size=20,
+                    color='#8c929f',
+                    weight=ft.FontWeight.BOLD,
+                ),
+                ft.Container(height=5),
                 ft.Row(
                     controls=[
                         self.addr,
@@ -160,6 +168,16 @@ class PanelSettings(ft.Container):
                         self.status_auth,
                     ],
                 ),
+                ft.Divider(
+                    height=5,
+                ),
+                ft.Text(
+                    value='クライアント設定',
+                    size=20,
+                    color='#8c929f',
+                    weight=ft.FontWeight.BOLD,
+                ),
+                ft.Container(height=5),
                 ft.Row(
                     controls=[
                         self.switch_tooltip,
