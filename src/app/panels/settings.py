@@ -27,9 +27,13 @@ class PanelSettings(ft.Container):
         # 5: admin
         self.auth_state = 0
 
+        self.enable_tooltip = True
 
         def check_addr(e):
             self.check_addr()
+        
+        def toggle_tooltip(e):
+            self.enable_tooltip = self.switch_tooltip.value
 
         self.addr = ft.TextField(
             label='Emoji Moderation Serverのアドレス',
@@ -42,6 +46,12 @@ class PanelSettings(ft.Container):
             label='Misskeyトークン',
             password=True,
             can_reveal_password=True,
+        )
+
+        self.switch_tooltip = ft.Switch(
+            label='ツールチップ表示',
+            value=True,
+            on_change=toggle_tooltip,
         )
 
         self.button_connect = ft.FilledButton(
@@ -150,6 +160,21 @@ class PanelSettings(ft.Container):
                         self.status_auth,
                     ],
                 ),
+                ft.Row(
+                    controls=[
+                        self.switch_tooltip,
+                        ft.Tooltip(
+                            message='''\
+「絵文字一覧」画面で、項目のテキストなどが表示しきれない場合にツールチップを表示するようにするかどうかです。
+OFFにすると動作が軽くなりますが、長い文字列に遭遇した場合全文を読むことができない為、非推奨です。
+''',
+                            content=ft.Icon(
+                                name=ft.icons.HELP_ROUNDED,
+                                color='#c3c7cf',
+                            ),
+                        ),
+                    ],
+                ),
             ],
             alignment=ft.MainAxisAlignment.START,
             scroll=ft.ScrollMode.AUTO,
@@ -168,9 +193,11 @@ class PanelSettings(ft.Container):
     def save(self):
         addr = self.addr.value
         token = self.mi_token.value
+        tt = self.switch_tooltip.value
         data = {
             'addr': addr,
-            'token': token
+            'token': token,
+            'tooltip': tt,
         }
         with open(SETTING_FILE_PATH, 'wt') as fs:
             json.dump(data, fs, indent=2, separators=(',', ': '))
@@ -178,16 +205,22 @@ class PanelSettings(ft.Container):
     def load(self):
         addr = ''
         token = ''
+        tt = True
         if osp.isfile(SETTING_FILE_PATH):
             with open(SETTING_FILE_PATH, 'rt') as fs:
                 data = json.load(fs)
                 if 'addr' in data:
                     addr = data['addr']
+                if 'token' in data:
                     token = data['token']
+                if 'tooltip' in data:
+                    tt = data['tooltip']
         self.addr.value = addr
         self.mi_token.value = token
+        self.switch_tooltip.value = tt
         self.addr.update()
         self.mi_token.update()
+        self.switch_tooltip.update()
 
     def check_addr(self):
         if self.is_valid_addrport():

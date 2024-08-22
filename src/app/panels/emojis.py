@@ -235,15 +235,20 @@ class EmojiItem(ft.Container):
         self.risk_id = risk_id
         self.is_self_made = is_self_made
 
-        def checker_need_tooltip(threshold_width):
+        def checker_need_tooltip(threshold_width, message):
             def check_need_tooltip(e: ft.canvas.CanvasResizeEvent):
-                canvas = e.control
-                if isinstance(canvas.content, ft.Tooltip):
-                    tooltip = canvas.content
-                    if threshold_width > e.width or tooltip.message == '' or tooltip.message is None:
-                        content = tooltip.content
-                        canvas.content = content
-                        canvas.update()
+                if not self.page.data['settings'].enable_tooltip: return
+                if message not in ['', None]:
+                    canvas = e.control.content
+                    if not isinstance(canvas.content, ft.Tooltip):
+                        content = canvas.content
+                        if threshold_width <= e.width:
+                            canvas.content = ft.Tooltip(
+                                content=content,
+                                message=message,
+                                wait_duration=500,
+                            )
+                            canvas.update()
             return check_need_tooltip
 
         self.checkbox = ft.Checkbox(
@@ -259,68 +264,48 @@ class EmojiItem(ft.Container):
             error_content=ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030'),
         )
         self.emoji_name = SizeAwareControl(
-            on_resize=checker_need_tooltip(150),
-            content=ft.Tooltip(
-                content=ft.Text(self.name, no_wrap=True),
-                message=self.name,
-                wait_duration=500,
-            )
+            on_resize=checker_need_tooltip(150, self.name),
+            content=ft.Container(ft.Text(self.name, no_wrap=True),)
         )
         self.emoji_category = SizeAwareControl(
-            on_resize=checker_need_tooltip(120),
-            content=ft.Tooltip(
-                content=ft.Text(self.category, no_wrap=True),
-                message=self.category,
-                wait_duration=500,
-            )
+            on_resize=checker_need_tooltip(120, self.category),
+            content=ft.Container(ft.Text(self.category, no_wrap=True)),
         )
         self.emoji_tags = SizeAwareControl(
-            on_resize=checker_need_tooltip(200),
-            content=ft.Tooltip(
-                content=ft.Row(
-                    spacing=5,
-                    tight=True,
-                    controls=[
-                        ft.Container(
-                            padding=5,
-                            bgcolor=ft.colors.INDIGO,
-                            alignment=ft.alignment.center,
-                            border_radius=ft.border_radius.all(3),
-                            content=ft.Text(value=tag, size=10),
-                        )
-                        for tag in self.tags
-                    ]
-                ),
-                message=' '.join(self.tags),
-                wait_duration=500,
-            )
+            on_resize=checker_need_tooltip(200, ' '.join(self.tags)),
+            content=ft.Container(ft.Row(
+                spacing=5,
+                tight=True,
+                controls=[
+                    ft.Container(
+                        padding=5,
+                        bgcolor=ft.colors.INDIGO,
+                        alignment=ft.alignment.center,
+                        border_radius=ft.border_radius.all(3),
+                        content=ft.Text(value=tag, size=10),
+                    )
+                    for tag in self.tags
+                ]
+            )),
         )
         self.emoji_self_made = ft.Icon(
             name=ft.icons.CHECK_ROUNDED if self.is_self_made else ft.icons.CLOSE_ROUNDED,
             color='#d0d0d0' if self.is_self_made else '#303030',
         )
         self.emoji_license = SizeAwareControl(
-            on_resize=checker_need_tooltip(300),
-            content=ft.Tooltip(
-                content=ft.Text(self.license, no_wrap=True),
-                message=self.license,
-                wait_duration=500,
-            )
+            on_resize=checker_need_tooltip(300, self.license),
+            content=ft.Container(ft.Text(self.license, no_wrap=True)),
         )
         self.emoji_username = SizeAwareControl(
-            on_resize=checker_need_tooltip(120),
-            content=ft.Tooltip(
-                content=ft.Text(
-                    value=self.username,
-                    no_wrap=True,
-                    style=ft.TextStyle(
-                        italic=self.username == '<Unknown>',
-                        color='#404040' if self.username == '<Unknown>' else None
-                    ),
+            on_resize=checker_need_tooltip(120, self.username),
+            content=ft.Container(ft.Text(
+                value=self.username,
+                no_wrap=True,
+                style=ft.TextStyle(
+                    italic=self.username == '<Unknown>',
+                    color='#404040' if self.username == '<Unknown>' else None
                 ),
-                message=self.username,
-                wait_duration=500,
-            )
+            )),
         )
 
         def change_risk_level(e):
