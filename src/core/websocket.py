@@ -127,7 +127,7 @@ async def reception(ws, page):
                     case 'emojis_delete':
                         for i in body['ids']:
                             registry.pop_emoji(i)
-                        panel_emojis.remove_emoji([i for i in body['ids']])
+                        panel_emojis.remove_emojis([i for i in body['ids']])
                         log_subject = '絵文字のデータが削除されました'
                         log_text = ''
                         is_error = False
