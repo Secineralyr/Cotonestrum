@@ -536,6 +536,7 @@ class EmojiItem(ft.Container):
         )
     
     def did_mount(self):
+        self.reload_dropdown()
         self.page.run_task(self.get_username)
         self.page.run_task(self.get_risk)
 
