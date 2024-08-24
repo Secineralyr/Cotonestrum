@@ -236,6 +236,7 @@ OFFにすると動作が軽くなりますが、長い文字列に遭遇した�
         self.addr.value = addr
         self.mi_token.value = token
         self.switch_tooltip.value = tt
+        self.enable_tooltip = tt
         self.addr.update()
         self.mi_token.update()
         self.switch_tooltip.update()
