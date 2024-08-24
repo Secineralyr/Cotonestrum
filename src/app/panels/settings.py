@@ -33,6 +33,7 @@ class PanelSettings(ft.Container):
             self.check_addr()
         
         def toggle_tooltip(e):
+            self.save()
             self.enable_tooltip = self.switch_tooltip.value
 
         self.addr = ft.TextField(
