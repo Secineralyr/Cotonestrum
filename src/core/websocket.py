@@ -6,6 +6,7 @@ import asyncio
 import websockets
 import websockets.exceptions
 
+from app.panels.dashboard import PanelDashboard
 from core import wsmsg
 from core import registry
 
@@ -214,6 +215,7 @@ def auth(token, page):
 
     def callback_auth(body, page):
         permitted = False
+        bashboard: PanelDashboard = page.data['dashboard']
         match body['message']:
             case "You logged in as 'User'.":
                 page.data['settings'].set_auth_state(2)
@@ -227,6 +229,7 @@ def auth(token, page):
                 page.data['settings'].set_auth_state(5)
                 permitted = True
         if permitted:
+            bashboard.main_frame.welcome_text.update_to_authed_text()
             create_send_task(wsmsg.FetchAllEmojis(), page)
             create_send_task(wsmsg.FetchAllUsers(), page)
             create_send_task(wsmsg.FetchAllRisks(), page)

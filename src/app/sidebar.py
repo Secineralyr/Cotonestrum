@@ -8,7 +8,7 @@ from app.views import Views, SidebarButtonInfo
 
 class Constants(object):
     __WIDTH_COLLAPSED: int = 60
-    __WIDTH_EXTENDED: int  = 200
+    __WIDTH_EXTENDED: int  = 220
 
     __TOGGLE_BUTTON_HEIGHT = 60
     __BUTTON_HEIGHT = 50
@@ -60,6 +60,7 @@ class Sidebar(ft.Container):
 
         self.toggle_button = SidebarToggleButton(self)
         self.buttons: list[SidebarButton] = [
+            SidebarButton.create_sidebar_button(Views.DASHBOARD, self, True),
             SidebarButton.create_sidebar_button(Views.EMOJIS, self),
             SidebarButton.create_sidebar_button(Views.USERS, self),
             SidebarButton.create_sidebar_button(Views.REASONS, self),
@@ -113,8 +114,6 @@ class Sidebar(ft.Container):
         for button in [*self.buttons, *self.buttons_bottom]:
             button.locked = False
             button.update()
-
-
 
 
 class SidebarButton(ft.Container):
@@ -331,13 +330,3 @@ class SidebarToggleButton(ft.FloatingActionButton):
         self.icon = ft.icons.MENU_ROUNDED
 
         self.on_click = self.sidebar.toggle_extended
-
-
-
-
-
-
-
-
-
-
