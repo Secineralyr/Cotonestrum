@@ -1,5 +1,7 @@
+from typing import Optional
 import flet as ft
 
+from app.panels.dashboard import PanelDashboard
 from app.sidebar import Sidebar, SidebarArea
 from app.panels.emojis import PanelEmojis
 from app.panels.users import PanelUsers
@@ -16,7 +18,7 @@ class Root(ft.Container):
 
     __current_view = None
 
-    def get_panel(self, value: Views):
+    def get_panel(self, value: Views) -> Optional[Views]:
         match value:
             case Views.EMOJIS:
                 return self.panel_emojis
@@ -28,11 +30,14 @@ class Root(ft.Container):
                 return self.panel_settings
             case Views.LOGS:
                 return self.panel_logs
+            case Views.DASHBOARD:
+                return self.panel_dashboard
+        return None
 
     @property
     def current_view(self) -> Views:
         return self.__current_view
-    
+
     def navigate(self, value: Views):
         bvalue = self.__current_view
         self.__current_view = value
@@ -64,6 +69,7 @@ class Root(ft.Container):
         self.sidebar_area = SidebarArea()
         self.sidebar = Sidebar(self.sidebar_area)
 
+        self.panel_dashboard = PanelDashboard()
         self.panel_emojis = PanelEmojis()
         self.panel_users = PanelUsers()
         self.panel_reasons = PanelReasons()
@@ -71,6 +77,7 @@ class Root(ft.Container):
         self.panel_logs = PanelLogs()
 
         self.panels: list[ft.Control] = [
+            self.panel_dashboard,
             self.panel_emojis,
             self.panel_users,
             self.panel_reasons,
@@ -116,11 +123,17 @@ class Root(ft.Container):
             ],
             alignment=ft.alignment.bottom_right,
         )
-        
-    
+
+        # 最後にダッシュボードに移動する
+        # このときnavigateは使えないのでそういうふうにする
+        self.__current_view = Views.DASHBOARD
+        self.panel_dashboard.visible = True
+
+
     def did_mount(self):
         self.page.data['sidebar'] = self.sidebar
 
+        self.page.data['dashboard'] = self.panel_dashboard
         self.page.data['emojis'] = self.panel_emojis
         self.page.data['users'] = self.panel_users
         self.page.data['reasons'] = self.panel_reasons
@@ -128,6 +141,3 @@ class Root(ft.Container):
         self.page.data['logs'] = self.panel_logs
 
         self.page.data['loading'] = self.loading
-
-
-

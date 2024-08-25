@@ -136,7 +136,7 @@ class EmojiHeader(ft.Container):
                 ),
                 ft.VerticalDivider(width=1),
                 ft.Container(
-                    width=170,
+                    width=160,
                     alignment=ft.alignment.center,
                     content=ft.Text('名前'),
                 ),
@@ -160,7 +160,7 @@ class EmojiHeader(ft.Container):
                 ),
                 ft.VerticalDivider(width=1),
                 ft.Container(
-                    width=320,
+                    width=280,
                     alignment=ft.alignment.center,
                     content=ft.Text('ライセンス表記'),
                 ),
@@ -186,6 +186,12 @@ class EmojiHeader(ft.Container):
                     alignment=ft.alignment.center,
                     content=ft.Text('備考'),
                 ),
+                ft.Container(
+                    width=40,
+                    alignment=ft.alignment.center,
+                    content=ft.Text('状態'),
+                ),
+                ft.Container(width=10),
             ]
         )
 
@@ -278,7 +284,8 @@ class EmojiList(ft.ListView):
                 level = risk.level
                 reason = risk.reason_genre
                 remark = risk.remark
-                e.update_risk(level, reason, remark)
+                status = risk.checked
+                e.update_risk(level, reason, remark, status)
 
     def reload_dropdown(self):
         for e in self.emojis.values():
@@ -312,6 +319,8 @@ class EmojiItem(ft.Container):
             if override_emoji_url is not None and len(override_emoji_url.strip()) > 0:
                 self.emoji_url = re.sub(r'(https?://)[a-zA-Z0-9\-\.:]+(/.*)$', r'\g<1>' + override_emoji_url + r'\g<2>', self.emoji_url)
 
+        self.status_value = 0
+
         def checker_need_tooltip(threshold_width, message):
             def check_need_tooltip(e: ft.canvas.CanvasResizeEvent):
                 if not self.page.data['settings'].enable_tooltip: return
@@ -341,7 +350,7 @@ class EmojiItem(ft.Container):
             error_content=ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030'),
         )
         self.emoji_name = SizeAwareControl(
-            on_resize=checker_need_tooltip(150, self.name),
+            on_resize=checker_need_tooltip(140, self.name),
             content=ft.Container(ft.Text(self.name, no_wrap=True),)
         )
         self.emoji_category = SizeAwareControl(
@@ -370,7 +379,7 @@ class EmojiItem(ft.Container):
             color='#d0d0d0' if self.is_self_made else '#303030',
         )
         self.emoji_license = SizeAwareControl(
-            on_resize=checker_need_tooltip(300, self.license),
+            on_resize=checker_need_tooltip(260, self.license),
             content=ft.Container(ft.Text(self.license, no_wrap=True)),
         )
         self.emoji_username = SizeAwareControl(
@@ -417,6 +426,15 @@ class EmojiItem(ft.Container):
                 self._remark = self.remark.content.value
                 text = self.remark.content.value
                 self.change_remark(text)
+
+        def change_status(e):
+            match self.status_value:
+                case 0:
+                    self.change_status(1)
+                case 1:
+                    self.change_status(0)
+                case 2:
+                    self.change_status(1)
 
         self.risk_level = ft.RadioGroup(
             content=ft.Row(
@@ -474,6 +492,23 @@ class EmojiItem(ft.Container):
             padding=4,
             disabled=True,
         )
+        self.status = ft.Container(
+            content=ft.Tooltip(
+                content=ft.Icon(
+                    name=ft.icons.ERROR_ROUNDED,
+                    color='#cdad4b',
+                ),
+                message='要チェック',
+                wait_duration=1000,
+            ),
+            expand=True,
+            border_radius=4,
+            alignment=ft.alignment.center,
+            margin=4,
+            ink=True,
+            on_click=change_status,
+            disabled=True,
+        )
 
         self.height = 50
         self.content = ft.Row(
@@ -493,7 +528,7 @@ class EmojiItem(ft.Container):
                 ),
                 ft.VerticalDivider(width=1),
                 ft.Container(
-                    width=150,
+                    width=140,
                     margin=10,
                     alignment=ft.alignment.center_left,
                     clip_behavior=ft.ClipBehavior.HARD_EDGE,
@@ -523,7 +558,7 @@ class EmojiItem(ft.Container):
                 ),
                 ft.VerticalDivider(width=1),
                 ft.Container(
-                    width=300,
+                    width=260,
                     margin=10,
                     alignment=ft.alignment.center_left,
                     clip_behavior=ft.ClipBehavior.HARD_EDGE,
@@ -553,6 +588,12 @@ class EmojiItem(ft.Container):
                     alignment=ft.alignment.center_left,
                     content=self.remark,
                 ),
+                ft.Container(
+                    width=40,
+                    alignment=ft.alignment.center_left,
+                    content=self.status,
+                ),
+                ft.Container(width=10),
             ]
         )
     
@@ -578,7 +619,10 @@ class EmojiItem(ft.Container):
                 risk_level = risk.level
                 reason = risk.reason_genre
                 remark = risk.remark
-                self.update_risk(risk_level, reason, remark)
+                status = risk.checked
+                if status != 0:
+                    print(status)
+                self.update_risk(risk_level, reason, remark, status)
                 break
             await asyncio.sleep(1)
 
@@ -683,10 +727,11 @@ class EmojiItem(ft.Container):
             self.page.run_task(self.get_risk)
         self.update()
 
-    def update_risk(self, level, reason, remark):
+    def update_risk(self, level, reason, remark, status):
         self.update_risk_level(level, False)
         self.update_reason(reason, False)
         self.update_remark(remark, False)
+        self.update_status(status, False)
         if self.checkbox.value:
             self.main.bulk.update_values()
         self.update()
@@ -729,6 +774,27 @@ class EmojiItem(ft.Container):
             if self.checkbox.value:
                 self.main.bulk.update_values()
 
+    def update_status(self, status, _update=True):
+        self.status.disabled = False
+        self.status_value = status
+        match status:
+            case 0:
+                self.status.content.content.name = ft.icons.ERROR
+                self.status.content.content.color = '#cdad4b'
+                self.status.content.message = '要チェック'
+            case 1:
+                self.status.content.content.name = ft.icons.CHECK
+                self.status.content.content.color = '#5bae5b'
+                self.status.content.message = 'チェック済'
+            case 2:
+                self.status.content.content.name = ft.icons.ERROR_OUTLINE
+                self.status.content.content.color = '#c1d36e'
+                self.status.content.message = '要再チェック\n(絵文字更新済)'
+        if _update:
+            self.status.update()
+            if self.checkbox.value:
+                self.main.bulk.update_values()
+
     def reload_dropdown(self):
         self.reason.content.options = [ft.dropdown.Option(key='none', text=' ')]
         for rsid in registry.reasons:
@@ -747,6 +813,10 @@ class EmojiItem(ft.Container):
     def change_remark(self, text, _update=True):
         self.update_remark(text, _update)
         websocket.change_remark(self.risk_id, text, self.page)
+
+    def change_status(self, status, _update=True):
+        self.update_status(status, _update)
+        websocket.change_status(self.risk_id, status, self.page)
 
 class MoreLoad(ft.Container):
     def __init__(self, main: PanelEmojis):
@@ -787,6 +857,11 @@ class EmojiBulkChanger(ft.Container):
         super().__init__()
 
         self.main = main
+
+        # -2: none (no emoji selected)
+        # -1: bar (mixed)
+        # 0 - 2: same EmojiItem
+        self._status_value = -2
 
         def all_deselect(e):
             self.disabled = True
@@ -863,6 +938,24 @@ class EmojiBulkChanger(ft.Container):
                 self.update_values()
             self.main.unlock()
 
+        def change_status(e):
+            self.main.lock()
+            match self._status_value:
+                case -1:
+                    status = 1
+                case 0:
+                    status = 1
+                case 1:
+                    status = 0
+                case 2:
+                    status = 1
+            self._update_status(status)
+            for i in self.main.selected:
+                i.change_status(status, False)
+            self.main.update()
+            self.update_values()
+            self.main.unlock()
+
         self.risk_level = ft.RadioGroup(
             content=ft.Row(
                 expand=True,
@@ -927,6 +1020,21 @@ class EmojiBulkChanger(ft.Container):
             expand=True,
             padding=4,
         )
+        self.status = ft.Container(
+            content=ft.Tooltip(
+                content=ft.Icon(
+                    name=ft.icons.REMOVE,
+                    color='#00000000',
+                ),
+                message='<未選択>',
+            ),
+            expand=True,
+            border_radius=4,
+            alignment=ft.alignment.center,
+            margin=4,
+            ink=True,
+            on_click=change_status,
+        )
 
         self.half_risk_0 = ft.Icon(name=ft.icons.REMOVE_CIRCLE_OUTLINE_ROUNDED, color='#005bae5b', size=20)
         self.half_risk_1 = ft.Icon(name=ft.icons.REMOVE_CIRCLE_OUTLINE_ROUNDED, color='#00c1d36e', size=20)
@@ -947,7 +1055,7 @@ class EmojiBulkChanger(ft.Container):
                 ),
                 ft.VerticalDivider(width=1),
                 ft.Container(
-                    width=1076,
+                    width=1026,
                     margin=10,
                     alignment=ft.alignment.center_left,
                     content=self.select_counter,
@@ -990,6 +1098,12 @@ class EmojiBulkChanger(ft.Container):
                     alignment=ft.alignment.center_left,
                     content=self.remark,
                 ),
+                ft.Container(
+                    width=40,
+                    alignment=ft.alignment.center_left,
+                    content=self.status,
+                ),
+                ft.Container(width=10),
             ]
         )
 
@@ -1019,11 +1133,13 @@ class EmojiBulkChanger(ft.Container):
             self.half_risk_1.color = '#00c1d36e'
             self.half_risk_2.color = '#00cdad4b'
             self.half_risk_3.color = '#00cc4444'
+            self._update_status(-2)
         elif nsel == 1:
             e = list(self.main.selected)[0]
             common_risk_level = e.risk_level.value
             common_reason = e.reason.content.value
             common_remark = e.remark.content.value
+            common_status = e.status_value
             if common_reason == '': common_reason = None
             if common_remark == '': common_remark = None
             
@@ -1038,15 +1154,18 @@ class EmojiBulkChanger(ft.Container):
             else:
                 self.reason.content.hint_text = ''
             self.remark.content.value = common_remark
+            self._update_status(common_status)
         else:
             is_common_risk_level = True
             is_common_reason = True
             is_common_remark = True
+            is_common_status = True
 
             contains_risk = [False, False, False, False]
             common_risk_level = list(self.main.selected)[0].risk_level.value
             common_reason = list(self.main.selected)[0].reason.content.value
             common_remark = list(self.main.selected)[0].remark.content.value
+            common_status = list(self.main.selected)[0].status_value
             if common_reason == '': common_reason = None
             if common_remark == '': common_remark = None
             
@@ -1064,12 +1183,14 @@ class EmojiBulkChanger(ft.Container):
                 risk_level = e.risk_level.value
                 reason = e.reason.content.value
                 remark = e.remark.content.value
+                status = e.status_value
                 if reason == '': reason = None
                 if remark == '': remark = None
 
                 is_common_risk_level = is_common_risk_level and common_risk_level == risk_level
                 is_common_reason = is_common_reason and common_reason == reason
                 is_common_remark = is_common_remark and common_remark == remark
+                is_common_status = is_common_status and common_status == status
 
                 match risk_level:
                     case 'risk_0':
@@ -1100,14 +1221,41 @@ class EmojiBulkChanger(ft.Container):
                 else:
                     self.reason.content.hint_text = ''
             else:
-                self.reason.content.value = '<Mixed>'
-                self.reason.content.hint_text = '<Mixed>'
+                self.reason.content.value = '<混在>'
+                self.reason.content.hint_text = '<混在>'
             if is_common_remark:
                 self.remark.content.value = common_remark
             else:
-                self.remark.content.value = '<Mixed>'
+                self.remark.content.value = '<混在>'
+            if is_common_status:
+                self._update_status(common_status)
+            else:
+                self._update_status(-1)
         self.update()
 
+    def _update_status(self, status):
+        self._status_value = status
+        match status:
+            case -2:
+                self.status.content.content.name = ft.icons.REMOVE
+                self.status.content.content.color = '#00000000'
+                self.status.content.message = '<未選択>'
+            case -1:
+                self.status.content.content.name = ft.icons.REMOVE
+                self.status.content.content.color = '#606060'
+                self.status.content.message = '<混在>'
+            case 0:
+                self.status.content.content.name = ft.icons.ERROR
+                self.status.content.content.color = '#cdad4b'
+                self.status.content.message = '要チェック'
+            case 1:
+                self.status.content.content.name = ft.icons.CHECK
+                self.status.content.content.color = '#5bae5b'
+                self.status.content.message = 'チェック済'
+            case 2:
+                self.status.content.content.name = ft.icons.ERROR_OUTLINE
+                self.status.content.content.color = '#c1d36e'
+                self.status.content.message = '要再チェック\n(絵文字更新済)'
 
     def reload_dropdown(self):
         self.reason.content.options = [ft.dropdown.Option(key='none', text=' ')]
