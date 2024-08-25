@@ -278,7 +278,7 @@ class PieChart(ft.PieChart):
 
     def __init__(self):
         super().__init__(
-            expand=1,
+            expand=2,
             sections_space=0,
             center_space_radius=0,
             height=self._SECTION_RADIUS*2,
@@ -286,6 +286,9 @@ class PieChart(ft.PieChart):
         )
 
         def on_hover(e: ft.PieChartEvent):
+            # iosの場合、Noneになる
+            section_index = e.section_index if e.section_index is not None else -1
+
             # 他のホバーしているところから映った際にホバーしていたセクションのコンテナを非表示にする
             def before_badge_divisible():
                 if self._before_hover_section_index != -1:
@@ -295,16 +298,16 @@ class PieChart(ft.PieChart):
                         before_section.badge.update()
 
             # どこにもホバーがされていないとき
-            if e.section_index == -1:
+            if section_index == -1:
                 before_badge_divisible()
                 self._before_hover_section_index = -1
                 return
-            elif self._before_hover_section_index == e.section_index:
+            elif self._before_hover_section_index == section_index:
                 return
 
-            section: ft.PieChartSection = self.sections[e.section_index]
+            section: ft.PieChartSection = self.sections[section_index]
             before_badge_divisible()
-            self._before_hover_section_index = e.section_index
+            self._before_hover_section_index = section_index
             if section.badge is not None:
                 section.badge.opacity = 1
                 section.badge.update()
