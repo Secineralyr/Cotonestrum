@@ -1,3 +1,4 @@
+import flet as ft
 import flet.canvas as cv
 
 
@@ -19,4 +20,18 @@ class SizeAwareControl(cv.Canvas):
                 self.resize_callback(e)
         self.on_resize = resize
 
+class IOSBottomRightAlignment(ft.Column):
+    """IOS(ipadOS)のStack(他にもあるかもしれない)のバグでこうしないと右下にいかないので、そのためのラッパークラス"""
 
+    def __init__(self, content: ft.Control):
+        super().__init__(
+            controls=[
+                ft.Row(
+                    controls=[
+                        content,
+                    ],
+                    alignment=ft.MainAxisAlignment.END,
+                )
+            ],
+            alignment=ft.MainAxisAlignment.END,
+        )

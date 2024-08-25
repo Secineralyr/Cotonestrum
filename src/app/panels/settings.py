@@ -31,7 +31,7 @@ class PanelSettings(ft.Container):
 
         def check_addr(e):
             self.check_addr()
-        
+
         def toggle_tooltip(e):
             self.save()
             self.enable_tooltip = self.switch_tooltip.value
@@ -54,6 +54,10 @@ class PanelSettings(ft.Container):
             value=True,
             splash_radius=0,
             on_change=toggle_tooltip,
+        )
+
+        self.override_image_url = ft.TextField(
+            label='絵文字画像の上書き用url',
         )
 
         self.button_connect = ft.FilledButton(
@@ -101,7 +105,6 @@ class PanelSettings(ft.Container):
             ),
             spans=[self.status_perm],
         )
-
 
         self.expand = True
         self.margin = 15
@@ -194,6 +197,22 @@ OFFにすると動作が軽くなりますが、長い文字列に遭遇した�
                         ),
                     ],
                 ),
+                ft.Row(
+                    controls=[
+                        self.override_image_url,
+                        ft.Tooltip(
+                            message='''\
+基本的に開発用の設定項目です。
+これを設定すると絵文字の画像のオリジンはすべてこの項目のurlに差し替わります。
+基本的に設定するべきではありません。\
+''',
+                            content=ft.Icon(
+                                name=ft.icons.HELP_ROUNDED,
+                                color='#c3c7cf',
+                            ),
+                        ),
+                    ],
+                ),
             ],
             alignment=ft.MainAxisAlignment.START,
             scroll=ft.ScrollMode.AUTO,
@@ -213,10 +232,12 @@ OFFにすると動作が軽くなりますが、長い文字列に遭遇した�
         addr = self.addr.value
         token = self.mi_token.value
         tt = self.switch_tooltip.value
+        override_url = self.override_image_url.value
         data = {
             'addr': addr,
             'token': token,
             'tooltip': tt,
+            'emoji_url': override_url,
         }
         with open(SETTING_FILE_PATH, 'wt') as fs:
             json.dump(data, fs, indent=2, separators=(',', ': '))
@@ -225,6 +246,7 @@ OFFにすると動作が軽くなりますが、長い文字列に遭遇した�
         addr = ''
         token = ''
         tt = True
+        override_url = ''
         if osp.isfile(SETTING_FILE_PATH):
             with open(SETTING_FILE_PATH, 'rt') as fs:
                 data = json.load(fs)
@@ -234,13 +256,17 @@ OFFにすると動作が軽くなりますが、長い文字列に遭遇した�
                     token = data['token']
                 if 'tooltip' in data:
                     tt = data['tooltip']
+                if 'emoji_url' in data:
+                    override_url = data['emoji_url']
         self.addr.value = addr
         self.mi_token.value = token
         self.switch_tooltip.value = tt
         self.enable_tooltip = tt
+        self.override_image_url.value = override_url
         self.addr.update()
         self.mi_token.update()
         self.switch_tooltip.update()
+        self.override_image_url.update()
 
     def check_addr(self):
         if self.is_valid_addrport():

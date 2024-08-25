@@ -167,6 +167,7 @@ class SidebarButton(ft.Container):
             padding=ft.padding.only(right=30),
             content=self.text_content,
             animate_size=ft.Animation(300, ft.AnimationCurve.EASE_OUT_CUBIC),
+            clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
         )
 
         self.content = ft.Row(
