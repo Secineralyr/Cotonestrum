@@ -620,8 +620,6 @@ class EmojiItem(ft.Container):
                 reason = risk.reason_genre
                 remark = risk.remark
                 status = risk.checked
-                if status != 0:
-                    print(status)
                 self.update_risk(risk_level, reason, remark, status)
                 break
             await asyncio.sleep(1)
