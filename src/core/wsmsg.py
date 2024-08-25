@@ -8,7 +8,7 @@ class IWSMessage(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def _build_json(self) -> dict:
         raise NotImplementedError()
-    
+
     def build(self) -> str:
         return json.dumps(self._build_json())
 

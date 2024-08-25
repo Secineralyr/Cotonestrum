@@ -14,19 +14,19 @@ class Constants(object):
     __BUTTON_HEIGHT = 50
 
     @property
-    def WIDTH_COLLAPSED(self) -> int:
+    def WIDTH_COLLAPSED(self) -> int:  # noqa: N802
         return self.__WIDTH_COLLAPSED
 
     @property
-    def WIDTH_EXTENDED(self) -> int:
+    def WIDTH_EXTENDED(self) -> int:  # noqa: N802
         return self.__WIDTH_EXTENDED
-    
+
     @property
-    def TOGGLE_BUTTON_HEIGHT(self) -> int:
+    def TOGGLE_BUTTON_HEIGHT(self) -> int:  # noqa: N802
         return self.__TOGGLE_BUTTON_HEIGHT
 
     @property
-    def BUTTON_HEIGHT(self) -> int:
+    def BUTTON_HEIGHT(self) -> int:  # noqa: N802
         return self.__BUTTON_HEIGHT
 
 CONST_SIDEBAR = Constants()
@@ -98,13 +98,13 @@ class Sidebar(ft.Container):
         else:
             self.content.width = CONST_SIDEBAR.WIDTH_COLLAPSED
             self.toggle_button.icon = ft.icons.MENU_ROUNDED
-        
+
         for button in [*self.buttons, *self.buttons_bottom]:
             button.toggle_extended(extend)
-        
+
         self.sidebar_area.toggle_extended(extend)
         self.update()
-    
+
     def lock_buttons(self):
         for button in [*self.buttons, *self.buttons_bottom]:
             button.locked = True
@@ -181,16 +181,16 @@ class SidebarButton(ft.Container):
                 self.text_container,
             ],
         )
-    
+
     @classmethod
     def create_sidebar_button(cls, view: Views, sidebar: Sidebar, selected: bool = False):
         info = SidebarButtonInfo.get_info(view)
         return cls(view, sidebar, *info, selected)
-    
+
     @property
     def locked(self) -> bool:
         return self._locked
-    
+
     @locked.setter
     def locked(self, value: bool):
         if self._locked != value:
@@ -204,7 +204,7 @@ class SidebarButton(ft.Container):
     @property
     def icon(self) -> Optional[str]:
         return self._icon
-    
+
     @icon.setter
     def icon(self, value: Optional[str]):
         if self._icon != value:
@@ -215,18 +215,18 @@ class SidebarButton(ft.Container):
     @property
     def text(self) -> Optional[str]:
         return self._text
-    
+
     @text.setter
     def text(self, value: Optional[str]):
         if self._text != value:
             self._text = value
             self.text_content.value = value
             self.text_content.update()
-    
+
     @property
     def selected(self) -> bool:
         return self._selected
-    
+
     @selected.setter
     def selected(self, value: bool):
         if self._selected != value:
@@ -268,7 +268,7 @@ class SidebarButtonWithBadge(SidebarButton):
     @property
     def locked(self) -> bool:
         return self._locked
-    
+
     @locked.setter
     def locked(self, value: bool):
         if self._locked != value:
@@ -282,14 +282,14 @@ class SidebarButtonWithBadge(SidebarButton):
     @property
     def icon(self) -> Optional[str]:
         return self._icon
-    
+
     @icon.setter
     def icon(self, value: Optional[str]):
         if self._icon != value:
             self._icon = value
             self.icon_content.content.content.name = value
             self.icon_content.update()
-    
+
     def _show_badge_value(self):
         value = self.badge_value
         self.icon_content.content.label_visible = value > 0
@@ -305,10 +305,10 @@ class SidebarButtonWithBadge(SidebarButton):
     def set_badge_value(self, value: int):
         self.badge_value = value if value >= 0 else 0
         self._show_badge_value()
-    
+
     def get_badge_value(self):
         return self.badge_value
-    
+
     def reset_badge_value(self):
         if self.badge_value != 0:
             self.badge_value = 0

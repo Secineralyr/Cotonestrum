@@ -1,8 +1,8 @@
 
 class EmojiData():
-    def __init__(self, eid, misskey_id, name, category, tags, url, is_self_made, license, owner_id, risk_id, created_at, updated_at): 
+    def __init__(self, eid, misskey_id, name, category, tags, url, is_self_made, license, owner_id, risk_id, created_at, updated_at):
         self.id = eid
-        
+
         self.misskey_id = misskey_id
         self.name = name
         self.category = category
@@ -10,7 +10,7 @@ class EmojiData():
         self.url = url
         self.is_self_made = is_self_made
         self.license = license
-        
+
         self.owner_id = owner_id
         self.risk_id = risk_id
 

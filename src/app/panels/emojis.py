@@ -102,7 +102,7 @@ class PanelEmojis(ft.Row):
 
     def update_selected(self):
         self.bulk.update_selected()
-    
+
     def all_deselect(self):
         for e in self.selected:
             e.checkbox.value = False
@@ -227,7 +227,7 @@ class EmojiList(ft.ListView):
         risk_id = emoji_data.risk_id
         if owner is not None:
             owner = f'<{owner}>'
-        
+
         if eid in self.emojis:
             e: EmojiItem = self.emojis[eid]
             e.update_name(name)
@@ -241,7 +241,7 @@ class EmojiList(ft.ListView):
                 e.change_risk_id(risk_id)
         else:
             e = EmojiItem(self.main, name, category, tags, url, sm, license, owner, risk_id)
-            
+
             self.emojis[eid] = e
 
             self.controls.append(e)
@@ -260,7 +260,7 @@ class EmojiList(ft.ListView):
             e = self.emojis[eid]
             if e.checkbox.value:
                 e.toggle_selected(None)
-            
+
             self.controls.remove(e)
             if _update:
                 self.update()
@@ -596,7 +596,7 @@ class EmojiItem(ft.Container):
                 ft.Container(width=10),
             ]
         )
-    
+
     def did_mount(self):
         self.reload_dropdown()
         self.page.run_task(self.get_username)
@@ -674,18 +674,18 @@ class EmojiItem(ft.Container):
             wait_duration=500,
         )
         self.emoji_tags.update()
-    
+
     def update_url(self, url):
         self.url = url
         self.emoji_image.src = url
         self.emoji_image.update()
-    
+
     def update_self_made(self, is_self_made):
         self.is_self_made = is_self_made
         self.emoji_self_made.name = ft.icons.CHECK_ROUNDED if self.is_self_made else ft.icons.CLOSE_ROUNDED
         self.emoji_self_made.color = '#d0d0d0' if self.is_self_made else '#303030'
         self.emoji_self_made.update()
-    
+
     def update_license(self, license):
         self.license = license
         self.emoji_license.content = ft.Tooltip(
@@ -702,7 +702,7 @@ class EmojiItem(ft.Container):
             self.username_resolved = False
         else:
             self.username_resolved = True
-        
+
         self.username = username
         self.emoji_username.content = ft.Tooltip(
             content=ft.Text(
@@ -823,7 +823,7 @@ class MoreLoad(ft.Container):
         super().__init__()
 
         self.main = main
-        
+
         self.ink = True
 
         def on_click(e):
@@ -879,7 +879,7 @@ class EmojiBulkChanger(ft.Container):
             self.main.all_deselect()
 
             self.main.unlock()
-        
+
         self.checkbox = ft.Checkbox(
             label='',
             value=False,
@@ -1142,7 +1142,7 @@ class EmojiBulkChanger(ft.Container):
             common_status = e.status_value
             if common_reason == '': common_reason = None
             if common_remark == '': common_remark = None
-            
+
             self.risk_level.value = common_risk_level
             self.half_risk_0.color = '#005bae5b'
             self.half_risk_1.color = '#00c1d36e'
@@ -1168,7 +1168,7 @@ class EmojiBulkChanger(ft.Container):
             common_status = list(self.main.selected)[0].status_value
             if common_reason == '': common_reason = None
             if common_remark == '': common_remark = None
-            
+
             match common_risk_level:
                 case 'risk_0':
                     contains_risk[0] = True
@@ -1178,7 +1178,7 @@ class EmojiBulkChanger(ft.Container):
                     contains_risk[2] = True
                 case 'risk_3':
                     contains_risk[3] = True
-            
+
             for e in list(self.main.selected)[1:]:
                 risk_level = e.risk_level.value
                 reason = e.reason.content.value
@@ -1201,7 +1201,7 @@ class EmojiBulkChanger(ft.Container):
                         contains_risk[2] = True
                     case 'risk_3':
                         contains_risk[3] = True
-            
+
             if is_common_risk_level:
                 self.risk_level.value = common_risk_level
                 self.half_risk_0.color = '#005bae5b'

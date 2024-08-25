@@ -10,8 +10,6 @@ from app.panels.dashboard import PanelDashboard
 from core import wsmsg
 from core import registry
 
-from app.misc.loadingring import LoadingRing
-
 ws = None
 task = None
 pending = {}
@@ -203,7 +201,7 @@ async def reception(ws, page):
             break
         except websockets.ConnectionClosed:
             break
-        except:
+        except Exception:
             traceback.print_exc()
 
 
@@ -234,7 +232,7 @@ def auth(token, page):
             create_send_task(wsmsg.FetchAllUsers(), page)
             create_send_task(wsmsg.FetchAllRisks(), page)
             create_send_task(wsmsg.FetchAllReasons(), page)
-    
+
     def error_auth(body, err, page):
         page.data['settings'].set_auth_state(0)
 

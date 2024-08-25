@@ -21,7 +21,7 @@ class PanelLogs(ft.Container):
 
         self.button_navigate_to_bottom = ft.FloatingActionButton(
             icon=ft.icons.KEYBOARD_DOUBLE_ARROW_DOWN_ROUNDED,
-            on_click=navigate_to_bottom, 
+            on_click=navigate_to_bottom,
         )
 
         self.expand = True
@@ -65,7 +65,7 @@ class PanelLogs(ft.Container):
                 ),
                 ft.Row(height=3),
             ]
-        
+
         inner.extend(
             [
                 ft.Text(

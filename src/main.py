@@ -19,7 +19,7 @@ async def main(page: ft.Page):
         'IBM Plex Sans JP': 'https://github.com/google/fonts/raw/main/ofl/ibmplexsansjp/IBMPlexSansJP-Regular.ttf',
         'M PLUS 1 Code': 'https://github.com/google/fonts/raw/main/ofl/mplus1code/MPLUS1Code%5Bwght%5D.ttf',
     }
-    
+
     page.theme = ft.Theme(font_family='IBM Plex Sans JP')
 
     page.theme_mode = 'DARK'

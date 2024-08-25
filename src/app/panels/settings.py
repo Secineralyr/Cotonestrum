@@ -241,7 +241,7 @@ OFFにすると動作が軽くなりますが、長い文字列に遭遇した�
         }
         with open(SETTING_FILE_PATH, 'wt') as fs:
             json.dump(data, fs, indent=2, separators=(',', ': '))
-    
+
     def load(self):
         addr = ''
         token = ''
@@ -297,12 +297,12 @@ OFFにすると動作が軽くなりますが、長い文字列に遭遇した�
 
         if len(z) == 0 or len(z) > 2:
             return False
-        
+
         if len(z) == 2:
             a, p = z
         else:
             a, p = z[0], '3005'
-        
+
         try:
             port = int(p)
         except ValueError:
@@ -315,18 +315,18 @@ OFFにすると動作が軽くなりますが、長い文字列に遭遇した�
             w = a.split('.')
             if len(w) != 4:
                 return False
-            
+
             try:
                 words = [int(i) for i in w]
             except ValueError:
                 return False
-            
+
             for word in words:
                 if word < 0 or word > 255:
                     return False
-            
+
         return True
-    
+
     def set_connect_state(self, state: int):
         self.connect_state = state
         if self.connect_state == 0 or self.connect_state == 1:
@@ -373,7 +373,7 @@ OFFにすると動作が軽くなりますが、長い文字列に遭遇した�
                     self.status_perm.text = '未認証'
                     self.status_perm.style.color = '#ff4040'
         self.update()
-    
+
     def set_auth_state(self, state: int):
         if self.connect_state != 2:
             return

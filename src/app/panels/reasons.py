@@ -186,7 +186,7 @@ class ReasonItem(ft.Row):
             self.button_delete,
         ]
         self.alignment = ft.MainAxisAlignment.CENTER
-    
+
     def set_reason_text(self, text):
         self._text = text
         self.text.value = text

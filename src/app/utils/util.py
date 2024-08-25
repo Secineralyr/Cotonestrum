@@ -5,7 +5,7 @@ import flet.canvas as cv
 class SizeAwareControl(cv.Canvas):
     def __init__(self, content=None, resize_interval=1000, on_resize=None, **kwargs):
         super().__init__(**kwargs)
-        
+
         self.content = content
         self.resize_interval = resize_interval
         self.resize_callback = on_resize
