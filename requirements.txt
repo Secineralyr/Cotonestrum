@@ -1,4 +1,3 @@
 flet
 websockets
 pyinstaller
-plotly==5.23.0
