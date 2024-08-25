@@ -12,7 +12,7 @@ class LoadingRing(ft.Container):
 
         self.margin = 5
 
-        self.width = 40
+        self.width = 0
         self.height = 40
         self.border_radius = 20
 
@@ -62,6 +62,7 @@ class LoadingRing(ft.Container):
                 self.text.value = str(self.counter) if self.counter > 1 else ''
                 self.text.update()
             if self.counter == 0:
+                self.width = 0
                 self.offset = ft.Offset(1.0, 0.0)
                 self.update()
             if self.counter < 0:
@@ -69,14 +70,14 @@ class LoadingRing(ft.Container):
         else:
             self.counter = 0
             self.text.value = ''
-            self.width = 40
+            self.width = 0
             self.offset = ft.Offset(1.0, 0.0)
             self.update()
 
     def show(self):
         self.counter += 1
+        self.width = 60 if self.counter > 1 else 40
         if self.counter > 1:
-            self.width = 60
             self.text.value = str(self.counter)
             self.text.update()
         self.offset = ft.Offset(0.0, 0.0)

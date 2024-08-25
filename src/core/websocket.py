@@ -262,6 +262,13 @@ def change_remark(rid, text, page):
     op = wsmsg.SetRiskProp(rid, remark=text)
     create_send_task(op, page)
 
+def change_status(rid, status, page):
+    global ws
+    if ws is None:
+        return
+    op = wsmsg.SetRiskProp(rid, checked=status)
+    create_send_task(op, page)
+
 
 def create_reason(text, page):
     global ws
