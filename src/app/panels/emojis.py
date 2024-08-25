@@ -1,3 +1,4 @@
+import re
 import asyncio
 import flet as ft
 
@@ -304,6 +305,13 @@ class EmojiItem(ft.Container):
         self.risk_id = risk_id
         self.is_self_made = is_self_made
 
+        # 上書き用urlが存在するなら絵文字の画像urlを上書きする
+        override_image_url = main.page.data['settings'].override_image_url
+        if override_image_url is not None:
+            override_emoji_url: str = override_image_url.value
+            if override_emoji_url is not None and len(override_emoji_url.strip()) > 0:
+                self.emoji_url = re.sub(r'(https?://)[a-zA-Z0-9\-\.:]+(/.*)$', r'\g<1>' + override_emoji_url + r'\g<2>', self.emoji_url)
+
         def checker_need_tooltip(threshold_width, message):
             def check_need_tooltip(e: ft.canvas.CanvasResizeEvent):
                 if not self.page.data['settings'].enable_tooltip: return
@@ -413,11 +421,24 @@ class EmojiItem(ft.Container):
         self.risk_level = ft.RadioGroup(
             content=ft.Row(
                 controls=[
-                    ft.Radio(value='risk_0', fill_color='#5bae5b', toggleable=True),
-                    ft.Radio(value='risk_1', fill_color='#c1d36e', toggleable=True),
-                    ft.Radio(value='risk_2', fill_color='#cdad4b', toggleable=True),
-                    ft.Radio(value='risk_3', fill_color='#cc4444', toggleable=True),
+                    ft.Container(
+                        content=ft.Radio(value='risk_0', fill_color='#5bae5b', toggleable=True),
+                        width=40,
+                    ),
+                    ft.Container(
+                        ft.Radio(value='risk_1', fill_color='#c1d36e', toggleable=True),
+                        width=40,
+                    ),
+                    ft.Container(
+                        ft.Radio(value='risk_2', fill_color='#cdad4b', toggleable=True),
+                        width=40,
+                    ),
+                    ft.Container(
+                        ft.Radio(value='risk_3', fill_color='#cc4444', toggleable=True),
+                        width=40,
+                    ),
                 ],
+                spacing=10,
             ),
             on_change=change_risk_level,
             disabled=True,
@@ -846,23 +867,36 @@ class EmojiBulkChanger(ft.Container):
             content=ft.Row(
                 expand=True,
                 controls=[
-                    ft.Radio(value='risk_0', toggleable=True, fill_color={
-                        ft.ControlState.DISABLED: '#8b8b8b',
-                        ft.ControlState.DEFAULT: '#5bae5b',
-                    }),
-                    ft.Radio(value='risk_1', toggleable=True, fill_color={
-                        ft.ControlState.DISABLED: '#c2c2c2',
-                        ft.ControlState.DEFAULT: '#c1d36e',
-                    }),
-                    ft.Radio(value='risk_2', toggleable=True, fill_color={
-                        ft.ControlState.DISABLED: '#ababab',
-                        ft.ControlState.DEFAULT: '#cdad4b',
-                    }),
-                    ft.Radio(value='risk_3', fill_color={
-                        ft.ControlState.DISABLED: '#6c6c6c',
-                        ft.ControlState.DEFAULT: '#cc4444',
-                    }),
+                    ft.Container(
+                        ft.Radio(value='risk_0', toggleable=True, fill_color={
+                            ft.ControlState.DISABLED: '#8b8b8b',
+                            ft.ControlState.DEFAULT: '#5bae5b',
+                        }),
+                        width=40,
+                    ),
+                    ft.Container(
+                        ft.Radio(value='risk_1', toggleable=True, fill_color={
+                            ft.ControlState.DISABLED: '#c2c2c2',
+                            ft.ControlState.DEFAULT: '#c1d36e',
+                        }),
+                        width=40,
+                    ),
+                    ft.Container(
+                        ft.Radio(value='risk_2', toggleable=True, fill_color={
+                            ft.ControlState.DISABLED: '#ababab',
+                            ft.ControlState.DEFAULT: '#cdad4b',
+                        }),
+                        width=40,
+                    ),
+                    ft.Container(
+                        ft.Radio(value='risk_3', fill_color={
+                            ft.ControlState.DISABLED: '#6c6c6c',
+                            ft.ControlState.DEFAULT: '#cc4444',
+                        }),
+                        width=40
+                    ),
                 ],
+                spacing=10,
             ),
             on_change=change_risk_level,
         )

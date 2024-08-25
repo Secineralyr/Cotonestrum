@@ -35,7 +35,13 @@ async def main(page: ft.Page):
 
     page.padding = 0
 
-    page.add(root)
+    page.add(
+        # iPadなどのセーフティエリアが必要な端末に対する配慮のため
+        ft.SafeArea(
+            root,
+            expand=True
+        )
+    )
     page.update()
 
 if __name__ == '__main__':

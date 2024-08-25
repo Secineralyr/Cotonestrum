@@ -7,6 +7,7 @@ from app.panels.reasons import PanelReasons
 from app.panels.settings import PanelSettings
 from app.panels.logs import PanelLogs
 
+from app.utils.util import IOSBottomRightAlignment
 from app.views import Views
 from app.misc.loadingring import LoadingRing
 
@@ -107,13 +108,13 @@ class Root(ft.Container):
                             margin=10,
                         ),
                     ],
-                    expand=True
+                    expand=True,
                 ),
-                ft.Container(
-                    content=self.loading,
-                )
+                IOSBottomRightAlignment(
+                    self.loading,
+                ),
             ],
-            alignment=ft.alignment.bottom_right
+            alignment=ft.alignment.bottom_right,
         )
         
     
