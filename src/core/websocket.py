@@ -214,20 +214,22 @@ def auth(token, page):
     def callback_auth(body, page):
         permitted = False
         bashboard: PanelDashboard = page.data['dashboard']
-        match body['message']:
-            case "You logged in as 'User'.":
-                page.data['settings'].set_auth_state(2)
-            case "You logged in as 'Emoji moderator'.":
-                page.data['settings'].set_auth_state(3)
-                permitted = True
-            case "You logged in as 'Moderator'.":
-                page.data['settings'].set_auth_state(4)
-                permitted = True
-            case "You logged in as 'Administrator'.":
-                page.data['settings'].set_auth_state(5)
-                permitted = True
+
+        permissions = [
+            ("You logged in as 'User'.", 2, False),
+            ("You logged in as 'Emoji moderator'.", 3, True),
+            ("You logged in as 'Moderator'.", 4, True),
+            ("You logged in as 'Administrator'.", 5, True),
+        ]
+        msg = body['message']
+        for p in permissions:
+            if msg.startswith(p[0]):
+                page.data['settings'].set_auth_state(p[1])
+                permitted = p[2]
+                username = msg[len(f'{p[0]} (Username: '):-1]
+                break
         if permitted:
-            bashboard.main_frame.welcome_text.update_to_authed_text()
+            bashboard.main_frame.welcome_text.update_to_authed_text(username)
             create_send_task(wsmsg.FetchAllEmojis(), page)
             create_send_task(wsmsg.FetchAllUsers(), page)
             create_send_task(wsmsg.FetchAllRisks(), page)
