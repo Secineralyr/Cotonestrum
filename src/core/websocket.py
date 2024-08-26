@@ -9,6 +9,7 @@ import websockets.exceptions
 from app.panels.dashboard import PanelDashboard
 from core import wsmsg
 from core import registry
+from app.views import Views
 
 ws = None
 task = None
@@ -95,18 +96,30 @@ async def reception(ws, page):
                 match op:
                     case 'user_update':
                         registry.put_user(body['id'], body['misskey_id'], body['username'])
+
+                        if page.data['root'].current_view == Views.DASHBOARD:
+                            page.data['dashboard'].reload_users()
+
                         log_subject = 'ユーザーのデータを取得しました'
                         log_text = ''
                         is_error = False
                     case 'users_update':
                         for i in body:
                             registry.put_user(i['id'], i['misskey_id'], i['username'])
+
+                        if page.data['root'].current_view == Views.DASHBOARD:
+                            page.data['dashboard'].reload_users()
+
                         log_subject = '複数のユーザーのデータを取得しました'
                         log_text = ''
                         is_error = False
                     case 'emoji_update':
                         registry.put_emoji(body['id'], body['misskey_id'], body['name'], body['category'], body['tags'], body['url'], body['is_self_made'], body['license'], body['owner_id'], body['risk_id'], body['created_at'], body['updated_at'])
                         panel_emojis.add_emoji(body['id'])
+
+                        if page.data['root'].current_view == Views.DASHBOARD:
+                            page.data['dashboard'].reload_all()
+
                         log_subject = '絵文字のデータを取得しました'
                         log_text = ''
                         is_error = False
@@ -114,12 +127,20 @@ async def reception(ws, page):
                         for i in body:
                             registry.put_emoji(i['id'], i['misskey_id'], i['name'], i['category'], i['tags'], i['url'], i['is_self_made'], i['license'], i['owner_id'], i['risk_id'], i['created_at'], i['updated_at'])
                         panel_emojis.add_emojis([i['id'] for i in body])
+
+                        if page.data['root'].current_view == Views.DASHBOARD:
+                            page.data['dashboard'].reload_all()
+
                         log_subject = '絵文字のデータを取得しました'
                         log_text = ''
                         is_error = False
                     case 'emoji_delete':
                         registry.pop_emoji(body['id'])
                         panel_emojis.remove_emoji(body['id'])
+
+                        if page.data['root'].current_view == Views.DASHBOARD:
+                            page.data['dashboard'].reload_all()
+
                         log_subject = '絵文字のデータが削除されました'
                         log_text = ''
                         is_error = False
@@ -127,6 +148,10 @@ async def reception(ws, page):
                         for i in body['ids']:
                             registry.pop_emoji(i)
                         panel_emojis.remove_emojis([i for i in body['ids']])
+
+                        if page.data['root'].current_view == Views.DASHBOARD:
+                            page.data['dashboard'].reload_all()
+
                         log_subject = '絵文字のデータが削除されました'
                         log_text = ''
                         is_error = False
@@ -138,12 +163,20 @@ async def reception(ws, page):
                         registry.put_risk(rid, body['checked'], body['level'], body['reason_genre'], body['remark'], body['created_at'], body['updated_at'])
                         if rr:
                             page.data['emojis'].list_emoji.reload_risk(rid)
+
+                        if page.data['root'].current_view == Views.DASHBOARD:
+                            page.data['dashboard'].reload_risks()
+
                         log_subject = 'リスクのデータを取得しました'
                         log_text = ''
                         is_error = False
                     case 'risks_update':
                         for i in body:
                             registry.put_risk(i['id'], i['checked'], i['level'], i['reason_genre'], i['remark'], i['created_at'], i['updated_at'])
+
+                        if page.data['root'].current_view == Views.DASHBOARD:
+                            page.data['dashboard'].reload_risks()
+
                         log_subject = 'リスクのデータを取得しました'
                         log_text = ''
                         is_error = False
@@ -151,6 +184,10 @@ async def reception(ws, page):
                         registry.put_reason(body['id'], body['text'], body['created_at'], body['updated_at'])
                         page.data['reasons'].update_reason(body['id'], body['text'])
                         page.data['emojis'].reload_reasons()
+
+                        if page.data['root'].current_view == Views.DASHBOARD:
+                            page.data['dashboard'].reload_reasons()
+
                         log_subject = '理由区分のデータを取得しました'
                         log_text = ''
                         is_error = False
@@ -159,6 +196,10 @@ async def reception(ws, page):
                             registry.put_reason(i['id'], i['text'], i['created_at'], i['updated_at'])
                             page.data['reasons'].update_reason(i['id'], i['text'])
                         page.data['emojis'].reload_reasons()
+
+                        if page.data['root'].current_view == Views.DASHBOARD:
+                            page.data['dashboard'].reload_reasons()
+
                         log_subject = '理由区分のデータを取得しました'
                         log_text = ''
                         is_error = False
@@ -166,6 +207,10 @@ async def reception(ws, page):
                         registry.pop_reason(body['id'])
                         page.data['reasons'].remove_reason(body['id'])
                         page.data['emojis'].reload_reasons()
+
+                        if page.data['root'].current_view == Views.DASHBOARD:
+                            page.data['dashboard'].reload_reasons()
+
                         log_subject = '理由区分のデータが削除されました'
                         log_text = ''
                         is_error = False
@@ -174,6 +219,10 @@ async def reception(ws, page):
                             registry.pop_reason(i)
                             page.data['reasons'].remove_reason(i)
                         page.data['emojis'].reload_reasons()
+
+                        if page.data['root'].current_view == Views.DASHBOARD:
+                            page.data['dashboard'].reload_reasons()
+
                         log_subject = '理由区分のデータが削除されました'
                         log_text = ''
                         is_error = False
