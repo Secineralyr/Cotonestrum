@@ -52,7 +52,7 @@ class Root(ft.Container):
                 self.panel_logs.log_view.scroll_to(offset=-1, duration=0)
 
             if bvalue == Views.EMOJIS:
-                self.panel_emojis.bulk.all_deselect()
+                self.panel_emojis.bulk.all_deselect(None)
                 self.panel_emojis.list_emoji.delete_all_emojis()
 
             if before is not None:
