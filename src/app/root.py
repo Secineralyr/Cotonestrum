@@ -45,6 +45,8 @@ class Root(ft.Container):
             target = self.get_panel(value)
             before = self.get_panel(bvalue)
 
+            if value == Views.DASHBOARD:
+                self.panel_dashboard.reload_all()
             if value == Views.EMOJIS:
                 self.panel_emojis.load_next()
             if value == Views.LOGS:
@@ -142,3 +144,5 @@ class Root(ft.Container):
         self.page.data['logs'] = self.panel_logs
 
         self.page.data['loading'] = self.loading
+
+        self.panel_dashboard.reload_all()

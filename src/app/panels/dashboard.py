@@ -2,6 +2,8 @@ from typing import Union
 
 import flet as ft
 
+from core import registry
+
 # ほしいのは以下の通り
 # ようこそメッセージ
 # 現在の登録絵文字数、精査完了数、危険度別数
@@ -26,6 +28,23 @@ class PanelDashboard(ft.Container):
         """ダッシュボードのメインフレーム"""
         return self._main_frame
 
+    def reload_all(self):
+        self._main_frame.reload_emojis()
+        self._main_frame.reload_risks()
+        self._main_frame.reload_users()
+        self._main_frame.reload_reasons()
+
+    def reload_emojis(self):
+        self._main_frame.reload_emojis()
+
+    def reload_risks(self):
+        self._main_frame.reload_risks()
+
+    def reload_users(self):
+        self._main_frame.reload_users()
+
+    def reload_reasons(self):
+        self._main_frame.reload_reasons()
 
 class DashboardMainFrame(ft.Column):
     """ダッシュボードのメインパネル"""
@@ -92,6 +111,97 @@ class DashboardMainFrame(ft.Column):
         """理由区分チャート"""
         return self._reason_pie_chart
 
+    def reload_emojis(self):
+        count = len(registry.emojis)
+        self._emoji_status._emoji_count.change_count(count)
+
+    def reload_risks(self):
+        nchecked, nnochecked = 0, 0
+        nrisku, nrisk0, nrisk1, nrisk2, nrisk3 = 0, 0, 0, 0, 0
+        for emoji in registry.emojis.values():
+            rid = emoji.risk_id
+            risk = registry.get_risk(rid)
+            if risk is None:
+                nrisku += 1
+                nnochecked += 1
+            else:
+                match risk.level:
+                    case 0:
+                        nrisk0 += 1
+                    case 1:
+                        nrisk1 += 1
+                    case 2:
+                        nrisk2 += 1
+                    case 3:
+                        nrisk3 += 1
+                    case _:
+                        nrisku += 1
+                match risk.checked:
+                    case 1:
+                        nchecked += 1
+                    case _:
+                        nnochecked += 1
+
+        labels = ['危険度: 低', '危険度: 中', '危険度: 高', '危険度: 重大', '未設定']
+        values = [nrisk0, nrisk1, nrisk2, nrisk3, nrisku]
+        colors = ['#5bae5b', '#c1d36e', '#cdad4b', '#cc4444', '#a0a0a0']
+        self._risk_pie_chart.update_chart(labels, values, colors)
+
+        self._emoji_status._need_check_count.change_count(nnochecked)
+        self._emoji_status._checked_count.change_count(nchecked)
+
+        self._emoji_status._low_risk_count.change_count(nrisk0)
+        self._emoji_status._medium_risk_count.change_count(nrisk1)
+        self._emoji_status._high_risk_count.change_count(nrisk2)
+        self._emoji_status._danger_risk_count.change_count(nrisk3)
+
+    def reload_users(self):
+        users = {}
+        for emoji in registry.emojis.values():
+            uid = emoji.owner_id
+            user = registry.get_user(uid)
+            if user is not None:
+                name = user.username
+                if name in ['', None]:
+                    name = '<Unknown>'
+            else:
+                name = '<Unknown>'
+            if name not in users:
+                users[name] = 0
+            users[name] += 1
+
+        labels = list(users.keys())
+        values = list(users.values())
+        colors = ['#5f2756', '#a83a55', '#e14b56', '#f76f55', '#f8a255', '#808080']
+        self._user_pie_chart.update_chart(labels, values, colors)
+
+    def reload_reasons(self):
+        reasons = {}
+        for emoji in registry.emojis.values():
+            rid = emoji.risk_id
+            risk = registry.get_risk(rid)
+            if risk is None:
+                rsid = None
+            else:
+                rsid = risk.reason_genre
+            if rsid not in reasons:
+                reasons[rsid] = 0
+            reasons[rsid] += 1
+
+        labels = list(reasons.keys())
+        for i in range(len(labels)):
+            rsid = labels[i]
+            if rsid is not None:
+                reason = registry.get_reason(rsid)
+                if reason is None:
+                    labels[i] = '<削除された理由区分>'
+                else:
+                    labels[i] = reason.text
+            else:
+                labels[i] = '未設定'
+        values = list(reasons.values())
+        colors = ['#5f2756', '#a83a55', '#e14b56', '#f76f55', '#f8a255', '#808080']
+        self._reason_pie_chart.update_chart(labels, values, colors)
 
 class WelcomeText(ft.Text):
     """上部に表示されるメッセージ"""
@@ -106,7 +216,7 @@ class WelcomeText(ft.Text):
         # 下記はログインしていない状態
         self.value = 'ようこそCotonestrumへ！'
 
-    def update_to_authed_text(self, username: str = 'てすと'): # デフォルトは後で消す
+    def update_to_authed_text(self, username: str):
         """認証されている際にテキストを変更します"""
         self.value = f'おつかれさまです、{username}さん。'
         self.update()
@@ -204,18 +314,27 @@ class EmojiStatus(StatusFrame):
         super().__init__()
         self.alignment = ft.alignment.top_left
 
-        self._emoji_count = CounterInfoCard(ft.icons.ADD_REACTION, '#00B06B', '絵文字総数', 16777216)
-        self._check_count = CounterInfoCard(ft.icons.CHECKLIST_ROUNDED, '#1971FF', '精査数', 16777216)
-        self._low_risk_count = CounterInfoCard(ft.icons.HEALTH_AND_SAFETY_ROUNDED, '#00B06B', '危険度: 低', 16777216)
-        self._medium_risk_count = CounterInfoCard(ft.icons.WARNING_ROUNDED, '#F6AA00', '危険度: 中', 16777216)
-        self._high_risk_count = CounterInfoCard(ft.icons.DO_NOT_DISTURB_ROUNDED, '#FF4B00', '危険度: 高', 16777216)
-        self._danger_risk_count = CounterInfoCard(ft.icons.DANGEROUS_ROUNDED, '#990099', '危険度: 重大', 16777216)
+        self._emoji_count = CounterInfoCard(ft.icons.ADD_REACTION, '#00B06B', '絵文字総数', 0)
+        self._need_check_count = CounterInfoCard(ft.icons.ERROR_ROUNDED, '#e47b25', '要チェック', 0)
+        self._checked_count = CounterInfoCard(ft.icons.CHECKLIST_ROUNDED, '#2572e4', 'チェック済み', 0)
+        self._low_risk_count = CounterInfoCard(ft.icons.HEALTH_AND_SAFETY_ROUNDED, '#5bae5b', '危険度: 低', 0)
+        self._medium_risk_count = CounterInfoCard(ft.icons.WARNING_ROUNDED, '#c1d36e', '危険度: 中', 0)
+        self._high_risk_count = CounterInfoCard(ft.icons.DO_NOT_DISTURB_ROUNDED, '#cdad4b', '危険度: 高', 0)
+        self._danger_risk_count = CounterInfoCard(ft.icons.DANGEROUS_ROUNDED, '#cc4444', '危険度: 重大', 0)
         self.content = ft.Column(
             controls=[
                 ft.Row(
                     controls=[
                         self._emoji_count,
-                        self._check_count,
+                    ],
+                ),
+                ft.Divider(
+                    color='#ffffff',
+                ),
+                ft.Row(
+                    controls=[
+                        self._need_check_count,
+                        self._checked_count,
                     ],
                 ),
                 ft.Divider(
@@ -396,8 +515,10 @@ class PieChartComponent(ft.Row):
         """データが正しいかを確認"""
         if (
             self._has_other
-            and len(self._labels) != len(self._values)
-            and len(self._colors) < 1
+            and (
+                len(self._labels) != len(self._values)
+                or len(self._colors) < 1
+            )
         ) or (
             not self._has_other
             and not (len(self._labels) == len(self._values) == len(self._colors))
@@ -432,9 +553,9 @@ class PieChartComponent(ft.Row):
             return
 
         cutting_count = len(self._colors) - 1
-        # データが一致しているならその他カラーを削除する
-        if cutting_count == len(self._labels):
-            self._colors = self._colors[:cutting_count]
+        # カラーに対してデータが不足しているならカラーを削除して数を合わせる
+        if cutting_count >= len(self._labels):
+            self._colors = self._colors[:len(self._labels)]
             return
 
         integration_value = sum(self._values[cutting_count:])
