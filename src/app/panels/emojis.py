@@ -861,28 +861,11 @@ class EmojiBulkChanger(ft.Container):
         # 0 - 2: same EmojiItem
         self._status_value = -2
 
-        def all_deselect(e):
-            self.disabled = True
-
-            self.main.lock()
-
-            self.select_counter.value = '== 0 emojis selected. =='
-            self.checkbox.value = False
-            self.risk_level.value = None
-            self.reason.content.value = None
-            self.remark.content.value = None
-
-            self.update()
-
-            self.main.all_deselect()
-
-            self.main.unlock()
-
         self.checkbox = ft.Checkbox(
             label='',
             value=False,
             tristate=True,
-            on_change=all_deselect,
+            on_change=self.all_deselect,
         )
 
         self.select_counter = ft.Text(
@@ -1104,6 +1087,23 @@ class EmojiBulkChanger(ft.Container):
                 ft.Container(width=10),
             ]
         )
+
+    def all_deselect(self, e):
+        self.disabled = True
+
+        self.main.lock()
+
+        self.select_counter.value = '== 0 emojis selected. =='
+        self.checkbox.value = False
+        self.risk_level.value = None
+        self.reason.content.value = None
+        self.remark.content.value = None
+
+        self.update()
+
+        self.main.all_deselect()
+
+        self.main.unlock()
 
     def update_selected(self):
         nsel = len(self.main.selected)
