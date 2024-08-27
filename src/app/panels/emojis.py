@@ -4,6 +4,8 @@ import flet as ft
 
 from core import registry
 from core import websocket
+from core.filtering import EmojiFilter
+from core.filtering import SelectionIsSelfMade, SelectionRiskLevel, SelectionReasonGenre, SelectionCheckStatus
 
 from app.utils.util import SizeAwareControl
 from app.misc.loadingring import LoadingRing
@@ -19,9 +21,13 @@ class PanelEmojis(ft.Row):
 
         self.all_emojis = {} # Use dict with value=None because python doesn't has ordered set.
 
+        self.filter = EmojiFilter.no_filter()
+        self.filtered_emojis = {}
+
         self.selected: set[EmojiItem] = set()
         self.count_emojis = 0
 
+        self.header = EmojiHeader(self)
         self.list_emoji = EmojiList(self)
         self.bulk = EmojiBulkChanger(self)
 
@@ -38,7 +44,7 @@ class PanelEmojis(ft.Row):
                     alignment=ft.alignment.top_left,
                     spacing=0,
                     controls=[
-                        EmojiHeader(),
+                        self.header,
                         ft.Divider(height=1),
                         self.list_emoji,
                         ft.Divider(height=1),
@@ -50,15 +56,21 @@ class PanelEmojis(ft.Row):
 
     def add_emoji(self, eid: str):
         self.all_emojis[eid] = None
+        if self.filter.filter(eid):
+            self.filtered_emojis[eid] = None
 
     def remove_emoji(self, eid: str):
         if eid in self.all_emojis:
             self.list_emoji.delete_emoji(eid)
             del self.all_emojis[eid]
+            if eid in self.filtered_emojis:
+                del self.filtered_emojis[eid]
 
     def add_emojis(self, eids: list[str]):
         for eid in eids:
             self.all_emojis[eid] = None
+            if self.filter.filter(eid):
+                self.filtered_emojis[eid] = None
 
     def remove_emojis(self, eids: list[str]):
         eeids = []
@@ -68,6 +80,8 @@ class PanelEmojis(ft.Row):
         self.list_emoji.delete_emojis(eeids)
         for eid in eeids:
             del self.all_emojis[eid]
+            if eid in self.filtered_emojis:
+                del self.filtered_emojis[eid]
 
     def lock(self):
         lr: LoadingRing = self.page.data['loading']
@@ -84,6 +98,11 @@ class PanelEmojis(ft.Row):
         if self._locks == 0:
             sidebar.unlock_buttons()
 
+    def unload_all(self):
+        self.bulk.all_deselect(None)
+        self.list_emoji.delete_all_emojis()
+        self.list_emoji.update()
+
     def load_next(self, count=50):
         if self.loading: return
         self.loading = True
@@ -91,7 +110,7 @@ class PanelEmojis(ft.Row):
         if len(self.list_emoji.controls) > 0:
             if isinstance(self.list_emoji.controls[-1], MoreLoad):
                 del self.list_emoji.controls[-1]
-        eids = [eid for eid in self.all_emojis if eid not in self.list_emoji.emojis.keys()]
+        eids = [eid for eid in self.filtered_emojis if eid not in self.list_emoji.emojis.keys()]
         if len(eids) > count:
             eids = eids[:count]
         self.list_emoji.update_emojis(eids, False)
@@ -113,10 +132,40 @@ class PanelEmojis(ft.Row):
         self.list_emoji.reload_dropdown()
         self.bulk.reload_dropdown()
 
+    def open_filtering_menu(self):
+        self.page.show_dialog(FilteringDialog(self))
+
+    def update_filter(self, filter: EmojiFilter):
+        self.filter = filter
+        self.header.set_filtering_status(filter.get_filter_status())
+        eids = list(self.all_emojis.keys())
+        self.filtered_emojis = {eid: None for eid in filter.filter_all(eids)}
+        self.unload_all()
+        self.load_next()
+
 
 class EmojiHeader(ft.Container):
-    def __init__(self):
+    def __init__(self, main: PanelEmojis):
         super().__init__()
+
+        self.main = main
+
+        def open_filtering_menu(e):
+            self.main.open_filtering_menu()
+
+        self.filtering = ft.Container(
+            content=ft.Icon(
+                name=ft.icons.FILTER_LIST_ROUNDED,
+                color='#606060',
+            ),
+            expand=True,
+            border_radius=4,
+            alignment=ft.alignment.center,
+            margin=4,
+            ink=True,
+            on_click=open_filtering_menu,
+            disabled=False,
+        )
 
         self.height = 50
         self.content = ft.Row(
@@ -126,7 +175,7 @@ class EmojiHeader(ft.Container):
                 ft.Container(
                     width=50,
                     alignment=ft.alignment.center,
-                    content=ft.Text(''),
+                    content=self.filtering,
                 ),
                 ft.VerticalDivider(width=1),
                 ft.Container(
@@ -194,6 +243,13 @@ class EmojiHeader(ft.Container):
                 ft.Container(width=10),
             ]
         )
+
+    def set_filtering_status(self, enable: bool):
+        if enable:
+            self.filtering.content.color = '#40ff40'
+        else:
+            self.filtering.content.color = '#606060'
+        self.filtering.update()
 
 
 class EmojiList(ft.ListView):
@@ -1097,7 +1153,13 @@ class EmojiBulkChanger(ft.Container):
         self.checkbox.value = False
         self.risk_level.value = None
         self.reason.content.value = None
+        self.reason.content.hint_text = ''
         self.remark.content.value = None
+        self.half_risk_0.color = '#005bae5b'
+        self.half_risk_1.color = '#00c1d36e'
+        self.half_risk_2.color = '#00cdad4b'
+        self.half_risk_3.color = '#00cc4444'
+        self._update_status(-2)
 
         self.update()
 
@@ -1261,4 +1323,321 @@ class EmojiBulkChanger(ft.Container):
             text = registry.reasons[rsid].text
             self.reason.content.options.append(ft.dropdown.Option(key=rsid, text=text))
         self.reason.update()
+
+class FilteringDialog(ft.AlertDialog):
+    def __init__(self, main: PanelEmojis):
+        super().__init__()
+
+        self.main = main
+
+        self.title = ft.Text('フィルター設定')
+        self.title_padding = 10
+
+        def cancel_filtering(e):
+            self.page.close_dialog()
+
+        def ok_filtering(e):
+            filter: EmojiFilter = self.content.build_filter()
+            self.main.update_filter(filter)
+            self.page.close_dialog()
+
+        self.content = FilteringDialogContent(self.main.filter)
+
+        self.actions = [
+            ft.OutlinedButton(
+                content=ft.Text(
+                    value='キャンセル',
+                    style=ft.TextStyle(weight=ft.FontWeight.BOLD),
+                ),
+                style=ft.ButtonStyle(
+                    side=ft.BorderSide(width=2),
+                    shape=ft.RoundedRectangleBorder(3),
+                ),
+                on_click=cancel_filtering,
+            ),
+            ft.FilledButton(
+                content=ft.Text(
+                    value='OK',
+                    style=ft.TextStyle(weight=ft.FontWeight.BOLD),
+                ),
+                style=ft.ButtonStyle(
+                    shape=ft.RoundedRectangleBorder(3)
+                ),
+                on_click=ok_filtering,
+            ),
+        ]
+
+class FilteringDialogContent(ft.Column):
+    def __init__(self, filter: EmojiFilter):
+        super().__init__()
+
+        self.scroll = ft.ScrollMode.ALWAYS
+
+        reason_genre_checkboxes = [
+            ReasonGenreCheckbox(
+                None,
+                label='未設定',
+                value=filter.reason_genre.mapping[None] if None in filter.reason_genre.mapping else False,
+            ),
+        ]
+        for rsid in registry.reasons:
+            reason = registry.get_reason(rsid)
+            reason_genre_checkboxes.append(
+                ReasonGenreCheckbox(
+                    rsid,
+                    label=reason.text,
+                    value=filter.reason_genre.mapping[rsid] if rsid in filter.reason_genre.mapping else False,
+                ),
+            )
+
+        def toggle_main_switch(e):
+            self.main_container.disabled = not self.main_switch.value
+            self.main_container.update()
+
+        self.main_switch = ft.Switch(
+            label='フィルタ機能',
+            splash_radius=0,
+            value=filter.enabled,
+            on_change=toggle_main_switch,
+        )
+
+        self.name = ft.TextField(value=filter.name)
+        self.category = EmptyOrTextField(filter.category, filter.empty_category)
+        self.tags = EmptyOrTextField(filter.tags, filter.empty_tags)
+        self.is_self_made = ft.Column(
+            controls=[
+                ft.Checkbox(label='はい', value=filter.is_self_made.yes),
+                ft.Checkbox(label='いいえ', value=filter.is_self_made.no),
+            ],
+            spacing=0,
+        )
+        self.licence = EmptyOrTextField(filter.licence, filter.empty_licence)
+        self.username = EmptyOrTextField(filter.username, filter.empty_username)
+        self.risk_level = ft.Column(
+            controls=[
+                ft.Checkbox(label='未設定', value=filter.risk_level.notset),
+                ft.Checkbox(label='低', value=filter.risk_level.low),
+                ft.Checkbox(label='中', value=filter.risk_level.medium),
+                ft.Checkbox(label='高', value=filter.risk_level.high),
+                ft.Checkbox(label='重大', value=filter.risk_level.danger),
+            ],
+            spacing=0,
+        )
+        self.reason_genre = ft.Column(
+            controls=reason_genre_checkboxes,
+            spacing=0,
+        )
+        self.remark = EmptyOrTextField(filter.remark, filter.empty_remark)
+        self.status = ft.Column(
+            controls=[
+                ft.Checkbox(label='要チェック', value=filter.status.need_check),
+                ft.Checkbox(label='要再チェック', value=filter.status.need_recheck),
+                ft.Checkbox(label='チェック済み', value=filter.status.checked),
+            ],
+            spacing=0,
+        )
+
+        self.name_container = ControlWithSwitch(
+            content=self.name,
+            label='名前',
+            enable=filter.enabled_name,
+        )
+        self.category_container = ControlWithSwitch(
+            content=self.category,
+            label='カテゴリー',
+            enable=filter.enabled_category,
+        )
+        self.tags_container = ControlWithSwitch(
+            content=self.tags,
+            label='タグ',
+            enable=filter.enabled_tags,
+        )
+        self.is_self_made_container = ControlWithSwitch(
+            content=self.is_self_made,
+            label='自作フラグ',
+            enable=filter.enabled_is_self_made,
+        )
+        self.licence_container = ControlWithSwitch(
+            content=self.licence,
+            label='ライセンス表記',
+            enable=filter.enabled_licence,
+        )
+        self.username_container = ControlWithSwitch(
+            content=self.username,
+            label='所有者',
+            enable=filter.enabled_username,
+        )
+        self.risk_level_container = ControlWithSwitch(
+            content=self.risk_level,
+            label='危険度',
+            enable=filter.enabled_risk_level,
+        )
+        self.reason_genre_container = ControlWithSwitch(
+            content=self.reason_genre,
+            label='理由区分',
+            enable=filter.enabled_reason_genre,
+        )
+        self.remark_container = ControlWithSwitch(
+            content=self.remark,
+            label='備考',
+            enable=filter.enabled_remark,
+        )
+        self.status_container = ControlWithSwitch(
+            content=self.status,
+            label='状態',
+            enable=filter.enabled_status,
+        )
+
+        self.main_container = ft.Container(
+            content=ft.Column(
+                controls=[
+                    ft.Container(
+                        content=ft.Column(
+                            controls=[
+                                self.name_container,
+                                self.category_container,
+                                self.tags_container,
+                                self.is_self_made_container,
+                                self.licence_container,
+                                self.username_container,
+                                self.risk_level_container,
+                                self.reason_genre_container,
+                                self.remark_container,
+                                self.status_container,
+                            ],
+                        ),
+                    ),
+                ],
+                scroll=ft.ScrollMode.HIDDEN,
+            ),
+            width=600,
+            padding=10,
+            border_radius=3,
+            disabled=not filter.enabled,
+        )
+
+        self.controls = [
+            self.main_switch,
+            self.main_container,
+        ]
+
+    def build_filter(self) -> EmojiFilter:
+
+        self_made_no = self.is_self_made.controls[1].value
+        self_made_yes = self.is_self_made.controls[0].value
+
+        risk_level_notset = self.risk_level.controls[0].value
+        risk_level_low = self.risk_level.controls[1].value
+        risk_level_medium = self.risk_level.controls[2].value
+        risk_level_high = self.risk_level.controls[3].value
+        risk_level_danger = self.risk_level.controls[4].value
+
+        status_need_check = self.status.controls[0].value
+        status_checked = self.status.controls[2].value
+        status_need_recheck = self.status.controls[1].value
+
+        reason_genre_items = {}
+        for cb in self.reason_genre.controls:
+            reason_genre_items[cb.rsid] = cb.value
+
+        enabled = self.main_switch.value
+
+        enabled_name = self.name_container.get_enabled()
+        enabled_category = self.category_container.get_enabled()
+        enabled_tags = self.tags_container.get_enabled()
+        enabled_is_self_made = self.is_self_made_container.get_enabled()
+        enabled_licence = self.licence_container.get_enabled()
+        enabled_username = self.username_container.get_enabled()
+        enabled_risk_level = self.risk_level_container.get_enabled()
+        enabled_reason_genre = self.reason_genre_container.get_enabled()
+        enabled_remark = self.remark_container.get_enabled()
+        enabled_status = self.status_container.get_enabled()
+
+        name = self.name.value
+        category = self.category.get_text()
+        tags = self.tags.get_text()
+        is_self_made = SelectionIsSelfMade(self_made_no, self_made_yes)
+        licence = self.licence.get_text()
+        username = self.username.get_text()
+        risk_level = SelectionRiskLevel(risk_level_notset, risk_level_low, risk_level_medium, risk_level_high, risk_level_danger)
+        reason_genre = SelectionReasonGenre(reason_genre_items)
+        remark = self.remark.get_text()
+        status = SelectionCheckStatus(status_need_check, status_checked, status_need_recheck)
+
+        empty_category = self.category.get_empty()
+        empty_tags = self.tags.get_empty()
+        empty_licence = self.licence.get_empty()
+        empty_username = self.username.get_empty()
+        empty_remark = self.remark.get_empty()
+
+        return EmojiFilter(enabled, enabled_name, enabled_category, enabled_tags, enabled_is_self_made, enabled_licence, enabled_username, enabled_risk_level, enabled_reason_genre, enabled_remark, enabled_status, name, category, tags, is_self_made, licence, username, risk_level, reason_genre, remark, status, empty_category, empty_tags, empty_licence, empty_username, empty_remark)
+
+class ControlWithSwitch(ft.Container):
+    def __init__(self, content: ft.Control, label: str, enable: bool = True):
+        super().__init__()
+
+        def toggle(e):
+            self.main_content.disabled = not self.switch.value
+            self.main_content.update()
+
+        self.main_content = content
+        self.switch = ft.Switch(
+            label=label,
+            splash_radius=0,
+            value=enable,
+            on_change=toggle,
+        )
+        self.main_content.disabled = not enable
+
+        self.content = ft.Column(
+            controls=[
+                self.switch,
+                self.main_content,
+            ],
+        )
+
+    def get_enabled(self) -> bool:
+        return self.switch.value
+
+class EmptyOrTextField(ft.Row):
+    def __init__(self, text: str, empty: bool):
+        super().__init__()
+
+        def toggle_empty(e):
+            self.set_empty(self.cb.value)
+
+        self.tf = ft.TextField(
+            value=text,
+            disabled=empty,
+        )
+        self.cb = ft.Checkbox(
+            label='空の項目を検索',
+            value=empty,
+            on_change=toggle_empty,
+        )
+
+        self.controls = [
+            self.tf,
+            self.cb,
+        ]
+
+    def get_text(self):
+        return self.tf.value
+
+    def get_empty(self):
+        return self.cb.value
+
+    def set_text(self, text: str):
+        self.tf.value = text
+        self.tf.update()
+
+    def set_empty(self, empty: bool):
+        self.tf.disabled = empty
+        self.cb.value = empty
+        self.update()
+
+class ReasonGenreCheckbox(ft.Checkbox):
+    def __init__(self, rsid, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.rsid = rsid
 
