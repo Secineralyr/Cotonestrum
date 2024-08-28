@@ -58,6 +58,8 @@ class PanelEmojis(ft.Row):
         self.all_emojis[eid] = None
         if self.filter.filter(eid):
             self.filtered_emojis[eid] = None
+            if eid in self.list_emoji.emojis:
+                self.list_emoji.update_emoji(eid)
 
     def remove_emoji(self, eid: str):
         if eid in self.all_emojis:
@@ -67,10 +69,14 @@ class PanelEmojis(ft.Row):
                 del self.filtered_emojis[eid]
 
     def add_emojis(self, eids: list[str]):
+        need_update = []
         for eid in eids:
             self.all_emojis[eid] = None
             if self.filter.filter(eid):
                 self.filtered_emojis[eid] = None
+                if eid in self.list_emoji.emojis:
+                    need_update.append(eid)
+        self.list_emoji.update_emojis(need_update)
 
     def remove_emojis(self, eids: list[str]):
         eeids = []
