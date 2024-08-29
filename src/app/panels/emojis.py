@@ -383,22 +383,6 @@ class EmojiItem(ft.Container):
 
         self.status_value = 0
 
-        def checker_need_tooltip(threshold_width, message):
-            def check_need_tooltip(e: ft.canvas.CanvasResizeEvent):
-                if not self.page.data['settings'].enable_tooltip: return
-                if message not in ['', None]:
-                    canvas = e.control.content
-                    if not isinstance(canvas.content, ft.Tooltip):
-                        content = canvas.content
-                        if threshold_width <= e.width:
-                            canvas.content = ft.Tooltip(
-                                content=content,
-                                message=message,
-                                wait_duration=500,
-                            )
-                            canvas.update()
-            return check_need_tooltip
-
         self.checkbox = ft.Checkbox(
             label='',
             value=False,
@@ -411,49 +395,64 @@ class EmojiItem(ft.Container):
             fit=ft.ImageFit.CONTAIN,
             error_content=ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030'),
         )
-        self.emoji_name = SizeAwareControl(
-            on_resize=checker_need_tooltip(140, self.name),
-            content=ft.Container(ft.Text(self.name, no_wrap=True),)
+        self.emoji_name = ft.Container(
+            content=SizeAwareControl(
+                on_resize=self.create_checker_need_tooltip(140, self.name),
+                content=ft.Container(ft.Text(self.name, no_wrap=True),)
+            ),
+            expand=True,
         )
-        self.emoji_category = SizeAwareControl(
-            on_resize=checker_need_tooltip(120, self.category),
-            content=ft.Container(ft.Text(self.category, no_wrap=True)),
+        self.emoji_category = ft.Container(
+            content=SizeAwareControl(
+                on_resize=self.create_checker_need_tooltip(120, self.category),
+                content=ft.Container(ft.Text(self.category, no_wrap=True)),
+            ),
+            expand=True,
         )
-        self.emoji_tags = SizeAwareControl(
-            on_resize=checker_need_tooltip(200, ' '.join(self.tags)),
-            content=ft.Container(ft.Row(
-                spacing=5,
-                tight=True,
-                controls=[
-                    ft.Container(
-                        padding=5,
-                        bgcolor=ft.colors.INDIGO,
-                        alignment=ft.alignment.center,
-                        border_radius=ft.border_radius.all(3),
-                        content=ft.Text(value=tag, size=10),
-                    )
-                    for tag in self.tags
-                ]
-            )),
+        self.emoji_tags = ft.Container(
+            content=SizeAwareControl(
+                on_resize=self.create_checker_need_tooltip(200, ' '.join(self.tags)),
+                content=ft.Container(ft.Row(
+                    spacing=5,
+                    tight=True,
+                    controls=[
+                        ft.Container(
+                            padding=5,
+                            bgcolor=ft.colors.INDIGO,
+                            alignment=ft.alignment.center,
+                            border_radius=ft.border_radius.all(3),
+                            content=ft.Text(value=tag, size=10),
+                        )
+                        for tag in self.tags
+                    ]
+                )),
+            ),
+            expand=True,
         )
         self.emoji_self_made = ft.Icon(
             name=ft.icons.CHECK_ROUNDED if self.is_self_made else ft.icons.CLOSE_ROUNDED,
             color='#d0d0d0' if self.is_self_made else '#303030',
         )
-        self.emoji_license = SizeAwareControl(
-            on_resize=checker_need_tooltip(260, self.license),
-            content=ft.Container(ft.Text(self.license, no_wrap=True)),
+        self.emoji_license = ft.Container(
+            content=SizeAwareControl(
+                on_resize=self.create_checker_need_tooltip(260, self.license),
+                content=ft.Container(ft.Text(self.license, no_wrap=True)),
+            ),
+            expand=True,
         )
-        self.emoji_username = SizeAwareControl(
-            on_resize=checker_need_tooltip(120, self.username),
-            content=ft.Container(ft.Text(
-                value=self.username,
-                no_wrap=True,
-                style=ft.TextStyle(
-                    italic=self.username == '<Unknown>',
-                    color='#404040' if self.username == '<Unknown>' else None
-                ),
-            )),
+        self.emoji_username = ft.Container(
+            content=SizeAwareControl(
+                on_resize=self.create_checker_need_tooltip(120, self.username),
+                content=ft.Container(ft.Text(
+                    value=self.username,
+                    no_wrap=True,
+                    style=ft.TextStyle(
+                        italic=self.username == '<Unknown>',
+                        color='#404040' if self.username == '<Unknown>' else None
+                    ),
+                )),
+            ),
+            expand=True,
         )
 
         def change_risk_level(e):
@@ -664,6 +663,24 @@ class EmojiItem(ft.Container):
         self.page.run_task(self.get_username)
         self.page.run_task(self.get_risk)
 
+
+    def create_checker_need_tooltip(self, threshold_width, message):
+        def check_need_tooltip(e: ft.canvas.CanvasResizeEvent):
+            if not self.page.data['settings'].enable_tooltip: return
+            if message not in ['', None]:
+                canvas = e.control.content
+                if not isinstance(canvas.content, ft.Tooltip):
+                    content = canvas.content
+                    if threshold_width <= e.width:
+                        canvas.content = ft.Tooltip(
+                            content=content,
+                            message=message,
+                            wait_duration=500,
+                        )
+                        canvas.update()
+        return check_need_tooltip
+
+
     async def get_username(self):
         while not self.username_resolved:
             user = registry.get_user(self.username[1:-1])
@@ -697,26 +714,25 @@ class EmojiItem(ft.Container):
 
     def update_name(self, name):
         self.name = name
-        self.emoji_name.content = ft.Tooltip(
-            content=ft.Text(self.name, no_wrap=True),
-            message=self.name,
-            wait_duration=500,
+        self.emoji_name.content = SizeAwareControl(
+            on_resize=self.create_checker_need_tooltip(140, self.name),
+            content=ft.Container(ft.Text(self.name, no_wrap=True),)
         )
         self.emoji_name.update()
 
     def update_category(self, category):
         self.category = category
-        self.emoji_category.content = ft.Tooltip(
-            content=ft.Text(self.category, no_wrap=True),
-            message=self.category,
-            wait_duration=500,
+        self.emoji_category.content = SizeAwareControl(
+            on_resize=self.create_checker_need_tooltip(120, self.category),
+            content=ft.Container(ft.Text(self.category, no_wrap=True)),
         )
         self.emoji_category.update()
 
     def update_tags(self, tags):
         self.tags = tags
-        self.emoji_tags.content = ft.Tooltip(
-            content=ft.Row(
+        self.emoji_tags.content = SizeAwareControl(
+            on_resize=self.create_checker_need_tooltip(200, ' '.join(self.tags)),
+            content=ft.Container(ft.Row(
                 spacing=5,
                 tight=True,
                 controls=[
@@ -729,9 +745,7 @@ class EmojiItem(ft.Container):
                     )
                     for tag in self.tags
                 ]
-            ),
-            message=' '.join(self.tags),
-            wait_duration=500,
+            )),
         )
         self.emoji_tags.update()
 
@@ -748,10 +762,9 @@ class EmojiItem(ft.Container):
 
     def update_license(self, license):
         self.license = license
-        self.emoji_license.content = ft.Tooltip(
-            content=ft.Text(self.license, no_wrap=True),
-            message=self.license,
-            wait_duration=500,
+        self.emoji_license.content = SizeAwareControl(
+            on_resize=self.create_checker_need_tooltip(260, self.license),
+            content=ft.Container(ft.Text(self.license, no_wrap=True)),
         )
         self.emoji_license.update()
 
@@ -764,17 +777,16 @@ class EmojiItem(ft.Container):
             self.username_resolved = True
 
         self.username = username
-        self.emoji_username.content = ft.Tooltip(
-            content=ft.Text(
+        self.emoji_username.content = SizeAwareControl(
+            on_resize=self.create_checker_need_tooltip(120, self.username),
+            content=ft.Container(ft.Text(
                 value=self.username,
                 no_wrap=True,
                 style=ft.TextStyle(
                     italic=self.username == '<Unknown>',
                     color='#404040' if self.username == '<Unknown>' else None
                 ),
-            ),
-            message=self.username,
-            wait_duration=500,
+            )),
         )
         self.emoji_username.update()
 
