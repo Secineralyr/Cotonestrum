@@ -9,7 +9,7 @@ from app.panels.reasons import PanelReasons
 from app.panels.settings import PanelSettings
 from app.panels.logs import PanelLogs
 
-from app.utils.util import IOSBottomRightAlignment
+from app.utils.util import IOSAlignment
 from app.views import Views
 from app.misc.loadingring import LoadingRing
 
@@ -119,8 +119,10 @@ class Root(ft.Container):
                     ],
                     expand=True,
                 ),
-                IOSBottomRightAlignment(
-                    self.loading,
+                IOSAlignment(
+                    content=self.loading,
+                    horizontal=ft.MainAxisAlignment.END,
+                    vertical=ft.MainAxisAlignment.END,
                 ),
             ],
             alignment=ft.alignment.bottom_right,

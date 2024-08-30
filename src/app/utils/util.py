@@ -20,18 +20,22 @@ class SizeAwareControl(cv.Canvas):
                 self.resize_callback(e)
         self.on_resize = resize
 
-class IOSBottomRightAlignment(ft.Column):
-    """IOS(ipadOS)のStack(他にもあるかもしれない)のバグでこうしないと右下にいかないので、そのためのラッパークラス"""
+class IOSAlignment(ft.Column):
+    """IOS(ipadOS)のStack(他にもあるかもしれない)のバグでこうしないとうまくいかないので、そのためのラッパークラス"""
 
-    def __init__(self, content: ft.Control):
+    def __init__(
+        self, content: ft.Control,
+        horizontal: ft.MainAxisAlignment,
+        vertical: ft.MainAxisAlignment
+    ):
         super().__init__(
             controls=[
                 ft.Row(
                     controls=[
                         content,
                     ],
-                    alignment=ft.MainAxisAlignment.END,
+                    alignment=horizontal,
                 )
             ],
-            alignment=ft.MainAxisAlignment.END,
+            alignment=vertical,
         )

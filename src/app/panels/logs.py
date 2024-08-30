@@ -2,7 +2,7 @@ import json
 
 import flet as ft
 
-from app.utils.util import IOSBottomRightAlignment
+from app.utils.util import IOSAlignment
 
 
 class PanelLogs(ft.Container):
@@ -38,7 +38,11 @@ class PanelLogs(ft.Container):
                     content=ft.Stack(
                         controls=[
                             self.log_view,
-                            IOSBottomRightAlignment(self.button_navigate_to_bottom),
+                            IOSAlignment(
+                                content=self.button_navigate_to_bottom,
+                                horizontal=ft.MainAxisAlignment.END,
+                                vertical=ft.MainAxisAlignment.END,
+                            ),
                         ],
                         alignment=ft.alignment.bottom_right,
                     ),
