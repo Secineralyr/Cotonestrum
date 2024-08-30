@@ -55,17 +55,11 @@ class DashboardMainFrame(ft.Column):
             expand=True,
         )
 
-        # テスト用 実装されたら消す
-        labels = ['いらない', '気になる', 'どうでもいい', 'めっちゃほしい']
-        values: list[Union[int, float]] = [370, 300, 150, 50]
-        values.reverse()
-        colors = ['#00B06B', '#1971FF', '#F6AA00', '#FF4B00']
-
         self._welcome_text = WelcomeText()
         self._emoji_status = EmojiStatus()
-        self._risk_pie_chart = PieChartComponent('危険度別絵文字数グラフ', labels, values, colors, False, False)
-        self._user_pie_chart = PieChartComponent('ユーザー別絵文字数グラフ', [*labels, 'ああああ'], [*values, 3], colors)
-        self._reason_pie_chart = PieChartComponent('理由区分別絵文字数グラフ', labels, values, [*colors, '#f0f0f0'])
+        self._risk_pie_chart = PieChartComponent('危険度別絵文字数グラフ', [], [], [], False, False)
+        self._user_pie_chart = PieChartComponent('ユーザー別絵文字数グラフ', [], [], [])
+        self._reason_pie_chart = PieChartComponent('理由区分別絵文字数グラフ', [], [], [])
 
         self.controls = [
             self._welcome_text,
@@ -513,17 +507,17 @@ class PieChartComponent(ft.Row):
 
     def _check_list(self):
         """データが正しいかを確認"""
-        if (
-            self._has_other
-            and (
-                len(self._labels) != len(self._values)
-                or len(self._colors) < 1
-            )
-        ) or (
-            not self._has_other
-            and not (len(self._labels) == len(self._values) == len(self._colors))
-        ):
-            raise ValueError('プロットデータの要素数が一致しません')
+        if self._has_other:
+            if len(self._colors) == 0:
+                if len(self._labels) == len(self._values) == 0:
+                    return
+            else:
+                if len(self._labels) == len(self._values):
+                    return
+        else:
+            if len(self._labels) == len(self._values) == len(self._colors):
+                return
+        raise ValueError('プロットデータの要素数が一致しません')
 
     def _sort_data(self):
         if not self._sortable:
@@ -550,6 +544,9 @@ class PieChartComponent(ft.Row):
         # つまり、カラーリストに6個の色があるならば
         # データの上位5個のデータが採用され、他のデータはすべて「その他」としてグルーピングされる
         if not self._has_other:
+            return
+
+        if len(self._labels) == len(self._values) == len(self._colors) == 0:
             return
 
         cutting_count = len(self._colors) - 1
