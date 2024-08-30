@@ -1,5 +1,7 @@
 import re
+import pyperclip
 import asyncio
+
 import flet as ft
 
 from core import registry
@@ -8,9 +10,9 @@ from core.filtering import EmojiFilter
 from core.filtering import SelectionIsSelfMade, SelectionRiskLevel, SelectionReasonGenre, SelectionCheckStatus
 
 from app.utils.util import SizeAwareControl
+from app.utils.util import IOSAlignment
 from app.misc.loadingring import LoadingRing
 from app.sidebar import Sidebar
-
 
 class PanelEmojis(ft.Row):
 
@@ -398,9 +400,40 @@ class EmojiItem(ft.Container):
         self.emoji_name = ft.Container(
             content=SizeAwareControl(
                 on_resize=self.create_checker_need_tooltip(140, self.name),
-                content=ft.Container(ft.Text(self.name, no_wrap=True),)
+                content=ft.Container(ft.Text(self.name, no_wrap=True),),
             ),
             expand=True,
+        )
+        def hover_name(e):
+            copy_icon.opacity = 1. if e.data == 'true' else 0.
+            copy_icon.update()
+        copy_icon = ft.Container(
+            ft.Icon(
+                name=ft.icons.COPY,
+                size=18,
+            ),
+            opacity=0.,
+            animate_opacity=300,
+        )
+        self.emoji_name_container = ft.Container(
+            ft.Stack(
+                controls=[
+                    IOSAlignment(
+                        content=copy_icon,
+                        horizontal=ft.MainAxisAlignment.END,
+                        vertical=ft.MainAxisAlignment.CENTER,
+                    ),
+                    self.emoji_name,
+                ],
+                alignment=ft.alignment.center_left,
+            ),
+            expand=True,
+            padding=5,
+            margin=5,
+            border_radius=3,
+            ink=True,
+            on_click=self.create_copier(self.name),
+            on_hover=hover_name,
         )
         self.emoji_category = ft.Container(
             content=SizeAwareControl(
@@ -589,11 +622,10 @@ class EmojiItem(ft.Container):
                 ),
                 ft.VerticalDivider(width=1),
                 ft.Container(
-                    width=140,
-                    margin=10,
+                    width=160,
                     alignment=ft.alignment.center_left,
                     clip_behavior=ft.ClipBehavior.HARD_EDGE,
-                    content=self.emoji_name,
+                    content=self.emoji_name_container,
                 ),
                 ft.VerticalDivider(width=1),
                 ft.Container(
@@ -662,6 +694,11 @@ class EmojiItem(ft.Container):
         self.reload_dropdown()
         self.page.run_task(self.get_username)
         self.page.run_task(self.get_risk)
+
+    def create_copier(self, text: str):
+        def copy_emoji_name(e):
+            pyperclip.copy(text)
+        return copy_emoji_name
 
 
     def create_checker_need_tooltip(self, threshold_width, message):
