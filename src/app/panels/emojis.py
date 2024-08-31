@@ -216,7 +216,7 @@ class EmojiHeader(ft.Container):
                 ),
                 ft.VerticalDivider(width=1),
                 ft.Container(
-                    width=280,
+                    width=240,
                     alignment=ft.alignment.center,
                     content=ft.Text('ライセンス表記'),
                 ),
@@ -233,7 +233,7 @@ class EmojiHeader(ft.Container):
                     content=ft.Text('危険度'),
                 ),
                 ft.Container(
-                    width=200,
+                    width=240,
                     alignment=ft.alignment.center,
                     content=ft.Text('理由区分'),
                 ),
@@ -471,7 +471,7 @@ class EmojiItem(ft.Container):
         )
         self.emoji_license = ft.Container(
             content=SizeAwareControl(
-                on_resize=self.create_checker_need_tooltip(260, self.license),
+                on_resize=self.create_checker_need_tooltip(220, self.license),
                 content=ft.Container(ft.Text(self.license, no_wrap=True)),
             ),
             expand=True,
@@ -567,6 +567,7 @@ class EmojiItem(ft.Container):
                 border_color='transparent',
                 filled=True,
                 fill_color='#10ffffff',
+                text_size=14,
                 content_padding=ft.padding.symmetric(horizontal=10),
                 on_change=change_reason,
             ),
@@ -654,7 +655,7 @@ class EmojiItem(ft.Container):
                 ),
                 ft.VerticalDivider(width=1),
                 ft.Container(
-                    width=260,
+                    width=220,
                     margin=10,
                     alignment=ft.alignment.center_left,
                     clip_behavior=ft.ClipBehavior.HARD_EDGE,
@@ -675,7 +676,7 @@ class EmojiItem(ft.Container):
                     content=self.risk_level,
                 ),
                 ft.Container(
-                    width=200,
+                    width=240,
                     alignment=ft.alignment.center_left,
                     content=self.reason,
                 ),
@@ -811,7 +812,7 @@ class EmojiItem(ft.Container):
     def update_license(self, license):
         self.license = license
         self.emoji_license.content = SizeAwareControl(
-            on_resize=self.create_checker_need_tooltip(260, self.license),
+            on_resize=self.create_checker_need_tooltip(220, self.license),
             content=ft.Container(ft.Text(self.license, no_wrap=True)),
         )
         self.emoji_license.update()
@@ -1103,6 +1104,7 @@ class EmojiBulkChanger(ft.Container):
                 border_color='transparent',
                 filled=True,
                 fill_color='#10ffffff',
+                text_size=14,
                 content_padding=ft.padding.symmetric(horizontal=10),
                 on_change=change_reason,
             ),
@@ -1158,7 +1160,7 @@ class EmojiBulkChanger(ft.Container):
                 ),
                 ft.VerticalDivider(width=1),
                 ft.Container(
-                    width=1026,
+                    width=986,
                     margin=10,
                     alignment=ft.alignment.center_left,
                     content=self.select_counter,
@@ -1192,7 +1194,7 @@ class EmojiBulkChanger(ft.Container):
                     ]
                 ),
                 ft.Container(
-                    width=200,
+                    width=240,
                     alignment=ft.alignment.center_left,
                     content=self.reason,
                 ),
