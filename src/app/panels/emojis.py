@@ -423,7 +423,11 @@ class EmojiItem(ft.Container):
                         horizontal=ft.MainAxisAlignment.END,
                         vertical=ft.MainAxisAlignment.CENTER,
                     ),
-                    self.emoji_name,
+                    IOSAlignment(
+                        content=self.emoji_name,
+                        horizontal=ft.MainAxisAlignment.START,
+                        vertical=ft.MainAxisAlignment.CENTER,
+                    ),
                 ],
                 alignment=ft.alignment.center_left,
             ),
