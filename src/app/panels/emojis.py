@@ -1677,7 +1677,7 @@ class EmptyOrTextField(ft.Row):
             disabled=empty,
         )
         self.cb = ft.Checkbox(
-            label='空の項目を検索',
+            label='空の項目のみを検索',
             value=empty,
             on_change=toggle_empty,
         )
