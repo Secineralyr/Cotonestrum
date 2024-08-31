@@ -1,5 +1,4 @@
 import re
-import pyperclip
 import asyncio
 
 import flet as ft
@@ -701,7 +700,7 @@ class EmojiItem(ft.Container):
 
     def create_copier(self, text: str):
         def copy_emoji_name(e):
-            pyperclip.copy(text)
+            self.page.set_clipboard(text)
             if self.copy_icon.opacity == 0.:
                 self.copy_icon.opacity = 1.
                 self.copy_icon.update()

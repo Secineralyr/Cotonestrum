@@ -1,4 +1,3 @@
 flet
-pyperclip
 websockets
 pyinstaller
