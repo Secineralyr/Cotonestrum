@@ -37,7 +37,7 @@ class PanelSettings(ft.Container):
             self.enable_tooltip = self.switch_tooltip.value
 
         self.addr = ft.TextField(
-            label='Emoji Moderation Serverのアドレス',
+            label='Recipiens Cotonestrum Serverのアドレス',
             label_style=ft.TextStyle(size=13),
             hint_text='192.168.x.x:yyyyy',
             on_change=check_addr,
