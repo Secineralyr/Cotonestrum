@@ -405,9 +405,9 @@ class EmojiItem(ft.Container):
             expand=True,
         )
         def hover_name(e):
-            copy_icon.opacity = 1. if e.data == 'true' else 0.
-            copy_icon.update()
-        copy_icon = ft.Container(
+            self.copy_icon.opacity = 1. if e.data == 'true' else 0.
+            self.copy_icon.update()
+        self.copy_icon = ft.Container(
             ft.Icon(
                 name=ft.icons.COPY,
                 size=18,
@@ -419,7 +419,7 @@ class EmojiItem(ft.Container):
             ft.Stack(
                 controls=[
                     IOSAlignment(
-                        content=copy_icon,
+                        content=self.copy_icon,
                         horizontal=ft.MainAxisAlignment.END,
                         vertical=ft.MainAxisAlignment.CENTER,
                     ),
@@ -702,6 +702,14 @@ class EmojiItem(ft.Container):
     def create_copier(self, text: str):
         def copy_emoji_name(e):
             pyperclip.copy(text)
+            if self.copy_icon.opacity == 0.:
+                self.copy_icon.opacity = 1.
+                self.copy_icon.update()
+                async def icon_off():
+                    await asyncio.sleep(0.3)
+                    self.copy_icon.opacity = 0.
+                    self.copy_icon.update()
+                self.page.run_task(icon_off)
         return copy_emoji_name
 
 
