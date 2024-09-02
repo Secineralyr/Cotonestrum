@@ -128,14 +128,14 @@ class PanelSettings(ft.Container):
                 ft.Row(
                     controls=[
                         self.addr,
-                        ft.Tooltip(
-                            message='''\
+                        ft.Icon(
+                            name=ft.icons.HELP_ROUNDED,
+                            color='#c3c7cf',
+                            tooltip=ft.Tooltip(
+                                message='''\
 このツール用のサーバーが稼働しているアドレスを入力してください。
 ポート番号を省略した場合デフォルトの3005番が使用されます。\
 ''',
-                            content=ft.Icon(
-                                name=ft.icons.HELP_ROUNDED,
-                                color='#c3c7cf',
                             ),
                         ),
                     ],
@@ -153,15 +153,15 @@ class PanelSettings(ft.Container):
                 ft.Row(
                     controls=[
                         self.mi_token,
-                        ft.Tooltip(
-                            message='''\
+                        ft.Icon(
+                            name=ft.icons.HELP_ROUNDED,
+                            color='#c3c7cf',
+                            tooltip=ft.Tooltip(
+                                message='''\
 このツールは絵文字モデレーター以上でなければ使用することができません。
 あなたが誰であるかを確認するためにトークンが必要になります。
 設定画面からトークンを生成して貼り付けてください。ここで必要な権限は「アカウントの情報を見る」のみです。\
 ''',
-                            content=ft.Icon(
-                                name=ft.icons.HELP_ROUNDED,
-                                color='#c3c7cf',
                             ),
                         ),
                     ],
@@ -185,14 +185,14 @@ class PanelSettings(ft.Container):
                 ft.Row(
                     controls=[
                         self.switch_tooltip,
-                        ft.Tooltip(
-                            message='''\
+                        ft.Icon(
+                            name=ft.icons.HELP_ROUNDED,
+                            color='#c3c7cf',
+                            tooltip=ft.Tooltip(
+                                message='''\
 「絵文字一覧」画面で、項目のテキストなどが表示しきれない場合にツールチップを表示するようにするかどうかです。
 OFFにすると動作が軽くなりますが、長い文字列に遭遇した場合全文を読むことができない為、非推奨です。
 ''',
-                            content=ft.Icon(
-                                name=ft.icons.HELP_ROUNDED,
-                                color='#c3c7cf',
                             ),
                         ),
                     ],
@@ -200,15 +200,15 @@ OFFにすると動作が軽くなりますが、長い文字列に遭遇した�
                 ft.Row(
                     controls=[
                         self.override_image_url,
-                        ft.Tooltip(
-                            message='''\
+                        ft.Icon(
+                            name=ft.icons.HELP_ROUNDED,
+                            color='#c3c7cf',
+                            tooltip=ft.Tooltip(
+                                message='''\
 基本的に開発用の設定項目です。
 これを設定すると絵文字の画像のオリジンはすべてこの項目のurlに差し替わります。
 基本的に設定するべきではありません。\
 ''',
-                            content=ft.Icon(
-                                name=ft.icons.HELP_ROUNDED,
-                                color='#c3c7cf',
                             ),
                         ),
                     ],

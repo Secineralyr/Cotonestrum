@@ -362,6 +362,7 @@ class EmojiItem(ft.Container):
         self.main = main
 
         self.username_resolved = False
+        self.dropdown_keys = []
 
         self.name = name
         self.category = category
@@ -530,7 +531,6 @@ class EmojiItem(ft.Container):
             rsid = self.reason.content.value
             if self.reason.content.value == 'none':
                 rsid = None
-            self.reason.update()
             self.change_reason(rsid)
 
         self._remark = ''
@@ -583,6 +583,7 @@ class EmojiItem(ft.Container):
                 options=[
                     ft.dropdown.Option(key='none', text=' '),
                 ],
+                value='none',
                 expand=True,
                 border_color='transparent',
                 filled=True,
@@ -591,6 +592,7 @@ class EmojiItem(ft.Container):
                 content_padding=ft.padding.symmetric(horizontal=10),
                 on_change=change_reason,
             ),
+            alignment=ft.alignment.center_left,
             expand=True,
             padding=4,
             disabled=True,
@@ -611,11 +613,11 @@ class EmojiItem(ft.Container):
             disabled=True,
         )
         self.status = ft.Container(
-            content=ft.Tooltip(
-                content=ft.Icon(
-                    name=ft.icons.ERROR_ROUNDED,
-                    color='#cdad4b',
-                ),
+            content=ft.Icon(
+                name=ft.icons.ERROR_ROUNDED,
+                color='#cdad4b',
+            ),
+            tooltip=ft.Tooltip(
                 message='要チェック',
                 wait_duration=1000,
             ),
@@ -738,15 +740,14 @@ class EmojiItem(ft.Container):
             if not self.page.data['settings'].enable_tooltip: return
             if message not in ['', None]:
                 canvas = e.control.content
-                if not isinstance(canvas.content, ft.Tooltip):
-                    content = canvas.content
+                content = canvas.content
+                if content.tooltip is None:
                     if threshold_width <= e.width:
-                        canvas.content = ft.Tooltip(
-                            content=content,
+                        content.tooltip = ft.Tooltip(
                             message=message,
                             wait_duration=500,
                         )
-                        canvas.update()
+                        content.update()
         return check_need_tooltip
 
 
@@ -918,7 +919,10 @@ class EmojiItem(ft.Container):
         self.reason.disabled = False
         self.reason.content.value = rsid
         if rsid is not None:
-            self.reason.content.hint_text = f'<{rsid}>'
+            if rsid in self.dropdown_keys:
+                self.reason.content.hint_text = ''
+            else:
+                self.reason.content.hint_text = '<{rsid}>'
         else:
             self.reason.content.hint_text = ''
         if _update:
@@ -939,27 +943,30 @@ class EmojiItem(ft.Container):
         self.status_value = status
         match status:
             case 0:
-                self.status.content.content.name = ft.icons.ERROR
-                self.status.content.content.color = '#cdad4b'
-                self.status.content.message = '要チェック'
+                self.status.content.name = ft.icons.ERROR
+                self.status.content.color = '#cdad4b'
+                self.status.tooltip.message = '要再チェック'
             case 1:
-                self.status.content.content.name = ft.icons.CHECK
-                self.status.content.content.color = '#5bae5b'
-                self.status.content.message = 'チェック済'
+                self.status.content.name = ft.icons.CHECK
+                self.status.content.color = '#5bae5b'
+                self.status.tooltip.message = 'チェック済'
             case 2:
-                self.status.content.content.name = ft.icons.ERROR_OUTLINE
-                self.status.content.content.color = '#c1d36e'
-                self.status.content.message = '要再チェック\n(絵文字更新済)'
+                self.status.content.name = ft.icons.ERROR_OUTLINE
+                self.status.content.color = '#c1d36e'
+                self.status.tooltip.message = '要再チェック\n(絵文字更新済)'
         if _update:
             self.status.update()
             if self.checkbox.value:
                 self.main.bulk.update_values()
 
     def reload_dropdown(self):
+        dropdown_keys = []
         self.reason.content.options = [ft.dropdown.Option(key='none', text=' ')]
         for rsid in registry.reasons:
             text = registry.reasons[rsid].text
             self.reason.content.options.append(ft.dropdown.Option(key=rsid, text=text))
+            dropdown_keys.append(rsid)
+        self.dropdown_keys = dropdown_keys
         self.reason.update()
 
     def change_risk_level(self, level, _update=True):
@@ -1017,6 +1024,8 @@ class EmojiBulkChanger(ft.Container):
         super().__init__()
 
         self.main = main
+
+        self.dropdown_keys = []
 
         # -2: none (no emoji selected)
         # -1: bar (mixed)
@@ -1165,12 +1174,13 @@ class EmojiBulkChanger(ft.Container):
             padding=4,
         )
         self.status = ft.Container(
-            content=ft.Tooltip(
-                content=ft.Icon(
-                    name=ft.icons.REMOVE,
-                    color='#00000000',
-                ),
+            content=ft.Icon(
+                name=ft.icons.REMOVE,
+                color='#00000000',
+            ),
+            tooltip=ft.Tooltip(
                 message='<未選択>',
+                wait_duration=1000,
             ),
             expand=True,
             border_radius=4,
@@ -1317,7 +1327,10 @@ class EmojiBulkChanger(ft.Container):
             self.half_risk_3.color = '#00cc4444'
             self.reason.content.value = common_reason
             if common_reason is not None:
-                self.reason.content.hint_text = f'<{common_reason}>'
+                if common_reason in self.dropdown_keys:
+                    self.reason.content.hint_text = ''
+                else:
+                    self.reason.content.hint_text = f'<{common_reason}>'
             else:
                 self.reason.content.hint_text = ''
             self.remark.content.value = common_remark
@@ -1384,7 +1397,10 @@ class EmojiBulkChanger(ft.Container):
             if is_common_reason:
                 self.reason.content.value = common_reason
                 if common_reason is not None:
-                    self.reason.content.hint_text = f'<{common_reason}>'
+                    if common_reason in self.dropdown_keys:
+                        self.reason.content.hint_text = ''
+                    else:
+                        self.reason.content.hint_text = f'<{common_reason}>'
                 else:
                     self.reason.content.hint_text = ''
             else:
@@ -1404,31 +1420,34 @@ class EmojiBulkChanger(ft.Container):
         self._status_value = status
         match status:
             case -2:
-                self.status.content.content.name = ft.icons.REMOVE
-                self.status.content.content.color = '#00000000'
-                self.status.content.message = '<未選択>'
+                self.status.content.name = ft.icons.REMOVE
+                self.status.content.color = '#00000000'
+                self.status.tooltip = '<未選択>'
             case -1:
-                self.status.content.content.name = ft.icons.REMOVE
-                self.status.content.content.color = '#606060'
-                self.status.content.message = '<混在>'
+                self.status.content.name = ft.icons.REMOVE
+                self.status.content.color = '#606060'
+                self.status.tooltip = '<混在>'
             case 0:
-                self.status.content.content.name = ft.icons.ERROR
-                self.status.content.content.color = '#cdad4b'
-                self.status.content.message = '要チェック'
+                self.status.content.name = ft.icons.ERROR
+                self.status.content.color = '#cdad4b'
+                self.status.tooltip = '要チェック'
             case 1:
-                self.status.content.content.name = ft.icons.CHECK
-                self.status.content.content.color = '#5bae5b'
-                self.status.content.message = 'チェック済'
+                self.status.content.name = ft.icons.CHECK
+                self.status.content.color = '#5bae5b'
+                self.status.tooltip = 'チェック済'
             case 2:
-                self.status.content.content.name = ft.icons.ERROR_OUTLINE
-                self.status.content.content.color = '#c1d36e'
-                self.status.content.message = '要再チェック\n(絵文字更新済)'
+                self.status.content.name = ft.icons.ERROR_OUTLINE
+                self.status.content.color = '#c1d36e'
+                self.status.tooltip = '要再チェック\n(絵文字更新済)'
 
     def reload_dropdown(self):
+        dropdown_keys = []
         self.reason.content.options = [ft.dropdown.Option(key='none', text=' ')]
         for rsid in registry.reasons:
             text = registry.reasons[rsid].text
             self.reason.content.options.append(ft.dropdown.Option(key=rsid, text=text))
+            dropdown_keys.append(rsid)
+        self.dropdown_keys = dropdown_keys
         self.reason.update()
 
 class FilteringDialog(ft.AlertDialog):
