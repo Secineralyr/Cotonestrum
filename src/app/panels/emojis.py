@@ -391,12 +391,26 @@ class EmojiItem(ft.Container):
             value=False,
             on_change=self.toggle_selected,
         )
-        self.emoji_image = ft.Image(
-            src=self.emoji_url,
-            width=46,
-            height=46,
-            fit=ft.ImageFit.CONTAIN,
-            error_content=ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030'),
+        def show_image(e):
+            self.page.show_dialog(
+                ft.AlertDialog(
+                    title=ft.Text('画像表示ウィンドウ'),
+                    title_padding=10,
+                    content=ft.Image(
+                        src=self.emoji_url,
+                        error_content=ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030'),
+                    )
+                )
+            )
+        self.emoji_image = ft.Container(
+            content=ft.Image(
+                src=self.emoji_url,
+                width=46,
+                height=46,
+                fit=ft.ImageFit.CONTAIN,
+                error_content=ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030'),
+            ),
+            on_click=show_image,
         )
         self.emoji_name = ft.Container(
             content=SizeAwareControl(
@@ -821,8 +835,8 @@ class EmojiItem(ft.Container):
 
     def update_url(self, url):
         self.url = url
-        self.emoji_image.src = url
-        self.emoji_image.update()
+        self.emoji_image.content.src = url
+        self.emoji_image.content.update()
 
     def update_self_made(self, is_self_made):
         self.is_self_made = is_self_made
