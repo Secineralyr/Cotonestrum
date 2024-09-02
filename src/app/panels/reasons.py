@@ -48,7 +48,10 @@ class PanelReasons(ft.Container):
             disabled=True,
         )
 
-        self.list_reason = ft.ListView(controls=[])
+        self.list_reason = ft.ListView(
+            expand=True,
+            controls=[],
+        )
 
         self.main_container = ft.Container(
             content=ft.Column(
@@ -66,8 +69,10 @@ class PanelReasons(ft.Container):
                     ),
                     self.list_reason,
                 ],
+                expand=True,
             ),
             width=400,
+            expand=True,
             padding=10,
             border_radius=5,
             disabled=True,
@@ -98,7 +103,8 @@ class PanelReasons(ft.Container):
                     ],
                 ),
                 self.main_container,
-            ]
+            ],
+            expand=True,
         )
 
     def set_locked(self, locked):
