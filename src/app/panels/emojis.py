@@ -10,6 +10,7 @@ from core.filtering import SelectionIsSelfMade, SelectionRiskLevel, SelectionRea
 
 from app.utils.control import SizeAwareControl
 from app.utils.control import IOSAlignment
+from app.utils import func
 from app.misc.loadingring import LoadingRing
 from app.sidebar import Sidebar
 
@@ -469,10 +470,29 @@ class EmojiItem(ft.Container):
             name=ft.icons.CHECK_ROUNDED if self.is_self_made else ft.icons.CLOSE_ROUNDED,
             color='#d0d0d0' if self.is_self_made else '#303030',
         )
+        spans = []
+        for is_url, text in func.detect_url(self.license):
+            if is_url:
+                span = ft.TextSpan(
+                    text=text,
+                    style=ft.TextStyle(
+                        decoration=ft.TextDecoration.UNDERLINE,
+                    ),
+                    on_click=lambda e: self.page.launch_url(url=text),  # noqa: B023
+                )
+            else:
+                span = ft.TextSpan(text=text)
+            spans.append(span)
         self.emoji_license = ft.Container(
             content=SizeAwareControl(
                 on_resize=self.create_checker_need_tooltip(220, self.license),
-                content=ft.Container(ft.Text(self.license, no_wrap=True)),
+                content=ft.Container(
+                    content=ft.Text(
+                        value='',
+                        spans=spans,
+                        no_wrap=True,
+                    )
+                ),
             ),
             expand=True,
         )
@@ -811,9 +831,28 @@ class EmojiItem(ft.Container):
 
     def update_license(self, license):
         self.license = license
+        spans = []
+        for is_url, text in func.detect_url(self.license):
+            if is_url:
+                span = ft.TextSpan(
+                    text=text,
+                    style=ft.TextStyle(
+                        decoration=ft.TextDecoration.UNDERLINE,
+                    ),
+                    on_click=lambda e: self.page.launch_url(url=text),  # noqa: B023
+                )
+            else:
+                span = ft.TextSpan(text=text)
+            spans.append(span)
         self.emoji_license.content = SizeAwareControl(
             on_resize=self.create_checker_need_tooltip(220, self.license),
-            content=ft.Container(ft.Text(self.license, no_wrap=True)),
+            content=ft.Container(
+                content=ft.Text(
+                    value='',
+                    spans=spans,
+                    no_wrap=True,
+                )
+            ),
         )
         self.emoji_license.update()
 
