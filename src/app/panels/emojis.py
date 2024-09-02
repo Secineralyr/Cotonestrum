@@ -8,8 +8,8 @@ from core import websocket
 from core.filtering import EmojiFilter
 from core.filtering import SelectionIsSelfMade, SelectionRiskLevel, SelectionReasonGenre, SelectionCheckStatus
 
-from app.utils.util import SizeAwareControl
-from app.utils.util import IOSAlignment
+from app.utils.control import SizeAwareControl
+from app.utils.control import IOSAlignment
 from app.misc.loadingring import LoadingRing
 from app.sidebar import Sidebar
 

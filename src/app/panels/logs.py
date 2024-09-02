@@ -2,7 +2,7 @@ import json
 
 import flet as ft
 
-from app.utils.util import IOSAlignment
+from app.utils.control import IOSAlignment
 
 
 class PanelLogs(ft.Container):

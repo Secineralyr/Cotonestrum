@@ -9,7 +9,7 @@ from app.panels.reasons import PanelReasons
 from app.panels.settings import PanelSettings
 from app.panels.logs import PanelLogs
 
-from app.utils.util import IOSAlignment
+from app.utils.control import IOSAlignment
 from app.views import Views
 from app.misc.loadingring import LoadingRing
 
