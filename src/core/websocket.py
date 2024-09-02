@@ -79,10 +79,18 @@ async def reception(ws, page):
                     log_subject = '操作が拒否されました'
                     log_text = f"操作: {body['op']}\n追記: {body['message']}\n必要な権限が不足している可能性があります。"
                     is_error = True
+                    if 'error' in operation:
+                        ret = operation['error'](body, data['op'], page)
+                        if ret is not None:
+                            log_subject, log_text = ret
                 elif op == 'internal_error':
                     log_subject = '内部エラーが発生しました'
                     log_text = f"操作: {body['op']}\n追記: {body['message']}\nこれはサーバー側の問題です。直らない場合報告してください。"
                     is_error = True
+                    if 'error' in operation:
+                        ret = operation['error'](body, data['op'], page)
+                        if ret is not None:
+                            log_subject, log_text = ret
                 else:
                     log_subject = 'エラーが発生しました'
                     log_text = f"操作: {body['op']}\n追記: {body['message']}"
