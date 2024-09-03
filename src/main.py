@@ -1,8 +1,10 @@
 import flet as ft
 
 from app.root import Root
+from app.utils.data import KeyboardBehaviorData
 
 async def main(page: ft.Page):
+    keyboard_behavior_data = KeyboardBehaviorData()
 
     def window_event_handler(e):
         if e.data == 'close':
@@ -28,6 +30,9 @@ async def main(page: ft.Page):
     page.window.on_event = window_event_handler
 
     page.data = {}
+
+    keyboard_behavior_data.start_keyboard_event()
+    page.data['keyboard_behavior'] = keyboard_behavior_data
 
     root = Root()
 
