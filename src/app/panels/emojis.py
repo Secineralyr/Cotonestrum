@@ -28,6 +28,9 @@ class PanelEmojis(ft.Row):
         self.filtered_emojis = {}
 
         self.selected: set[EmojiItem] = set()
+        self.multiselect_origin: EmojiItem | None = None
+        self.multiselect_destination: EmojiItem | None = None
+
         self.count_emojis = 0
 
         self.header = EmojiHeader(self)
@@ -325,6 +328,11 @@ class EmojiList(ft.ListView):
             e = self.emojis[eid]
             if e.checkbox.value:
                 e.toggle_selected(None)
+            if e == self.main.multiselect_origin:
+                self.main.multiselect_origin = None
+                self.main.multiselect_destination = None
+            elif e == self.main.multiselect_destination:
+                self.main.multiselect_destination = None
 
             self.controls.remove(e)
             if _update:
@@ -790,109 +798,89 @@ class EmojiItem(ft.Container):
 
     def toggle_selected(self, e: ft.ControlEvent):
         checked = self.checkbox.value if self.checkbox.value is not None else False
-        replace_checked = self._toggle_selected_checkbox_multiple(checked)
-        if replace_checked != checked:
-            self.checkbox.value = replace_checked
-            self.checkbox.update()
-        if checked:
-            self.main.selected.add(self)
-        elif replace_checked == checked and not replace_checked: # shiftが押されていなく、選択されてない
-            self.main.selected.discard(self)
+
+        keyboard_behavior: KeyboardBehaviorData = self.page.data['keyboard_behavior']
+
+        if not keyboard_behavior.shift or self.main.multiselect_origin is None:
+            # shiftが押されていない or 選択の開始位置がない場合(絵文字削除に起因) -> 単純な一項目のトグル
+            if checked:
+                self.main.selected.add(self)
+            else:
+                self.main.selected.discard(self)
+            self.main.multiselect_origin = self
+            self.main.multiselect_destination = None
+        else:
+            if not keyboard_behavior.ctrl:
+                # shiftが押されていてctrlは押されていない場合 -> 排他的な範囲選択
+                self._toggle_selected_multiple_exclusive()
+            else:
+                # shiftが押されていてctrlも押されている場合 -> 範囲選択
+                self._toggle_selected_multiple()
         self.main.update_selected()
 
-    def _toggle_selected_checkbox_multiple(self, checked: bool):
-        """複数選択の処理 NOTE: checkedがTrueのときはインスタンスの選択がない状態が前提、Falseはある状態が前提"""
-        if self.page is None or self.page.data is None:
-            return checked
+    def _toggle_selected_multiple_exclusive(self):
+        """排他的な複数選択の処理 (範囲外の項目は選択解除)"""
 
-        # shiftが押されていることが前提
-        keyboard_behavior: KeyboardBehaviorData = self.page.data['keyboard_behavior']
-        if not keyboard_behavior.shift:
-            return checked
-
-        # ここまでの処理が通るということは確実にcheckedが変更せずにTrueのままとなる
-
-        # そもそもないなら無意味なので弾く
-        if (not checked and (len(self.main.selected) - 1 < 1)) or (checked and (len(self.main.selected) == 0)):
-            return True
         # そのEmojiItemがListの何番目に属しているかわからないので調べる
         # 全てのEmojiItemがEmojiListにあることが前提
         emojis = list(self.main.list_emoji.emojis.values())
-        selected_emojis = [(emojis.index(x), x) for x in self.main.selected]
-        selected_emojis.sort(key=lambda x: x[0])
         current_item_index = emojis.index(self)
-        current_item_inserted_selected_emojis_index = [x[0] for x in selected_emojis]
-        # checkedがFalseならそれは追加処理される前にすでに存在してることを意味する(True -> Falseの変更)
-        if checked:
-            current_item_inserted_selected_emojis_index.append(current_item_index)
-        current_item_inserted_selected_emojis_index.sort()
-        current_item_index_inserted = current_item_inserted_selected_emojis_index.index(current_item_index)
+        origin_item_index = emojis.index(self.main.multiselect_origin)
 
-        start_range_index = -1
-        end_range_index = -1
-        # はじめや最後に引き当たるのであれば容易に推測可能
-        if current_item_index_inserted == 0:
-            start_range_index = current_item_index
-            end_range_index = current_item_inserted_selected_emojis_index[1]
-        elif current_item_index_inserted == len(current_item_inserted_selected_emojis_index) -1:
-            end_range_index = current_item_index
-            start_range_index = current_item_inserted_selected_emojis_index[-2]
+        start_index = min(current_item_index, origin_item_index)
+        end_index = max(current_item_index, origin_item_index)
+
+        for index, emoji in enumerate(emojis):
+            if index >= start_index and index <= end_index:
+                target = True
+            else:
+                target = False
+            if emoji.checkbox.value != target:
+                emoji.checkbox.value = target
+                emoji.checkbox.update()
+                if target:
+                    self.main.selected.add(emoji)
+                else:
+                    self.main.selected.discard(emoji)
+
+        self.main.multiselect_destination = self
+
+    def _toggle_selected_multiple(self):
+        """複数選択の処理 (範囲外の項目は選択維持)"""
+
+        emojis = list(self.main.list_emoji.emojis.values())
+        current_item_index = emojis.index(self)
+        origin_item_index = emojis.index(self.main.multiselect_origin)
+
+        on_start_index = min(current_item_index, origin_item_index)
+        on_end_index = max(current_item_index, origin_item_index)
+
+        if self.main.multiselect_destination is not None:
+            previous_destination_item_index = emojis.index(self.main.multiselect_destination)
+
+            off_start_index = min(previous_destination_item_index, origin_item_index)
+            off_end_index = max(previous_destination_item_index, origin_item_index)
         else:
-            # どちらでもない場合は、選択したitemから下に最も早く引き当たるitemを引き当てる
-            start_range_index = current_item_index
-            end_range_index = current_item_inserted_selected_emojis_index[current_item_index_inserted + 1]
+            off_start_index = -1
+            off_end_index = -1
 
-        # リストに飛び飛びの選択が含まれている場合、それらは選択削除対象とする
-        remove_items: list[EmojiItem] = []
-        # 選択されたindex値から上は、連続していない部分を削除対象にする
-        consecutively_flag = True
-        prev_selected_item_index = start_range_index
-        for i in range(current_item_inserted_selected_emojis_index.index(start_range_index) - 1, -1, -1):
-            current_selected_item_index = current_item_inserted_selected_emojis_index[i]
-            # もうすでに連続していなければ問答無用で削除対象
-            if not consecutively_flag:
-                remove_items.append(emojis[current_selected_item_index])
-            # 差が2以上であればそれは間が空いている証拠
-            if prev_selected_item_index - current_selected_item_index > 1:
-                consecutively_flag = False
-                remove_items.append(emojis[current_selected_item_index])
+
+        for index, emoji in enumerate(emojis):
+            if index >= on_start_index and index <= on_end_index:
+                target = True
+            elif index >= off_start_index and index <= off_end_index:
+                target = False
             else:
-                prev_selected_item_index = current_selected_item_index
-        # endから下にある部分を調べ、途中でリストindexから途切れる部分が存在していればそこから下は削除対象
-        consecutively_flag = True
-        prev_selected_item_index = end_range_index
-        for i in range(current_item_inserted_selected_emojis_index.index(end_range_index) + 1, len(current_item_inserted_selected_emojis_index)):
-            current_selected_item_index = current_item_inserted_selected_emojis_index[i]
-            # もうすでに連続していなければ問答無用で削除対象
-            # また、現に選択した値がFalseに戻るのであればそこから下は削除
-            if not consecutively_flag or not checked:
-                remove_items.append(emojis[current_selected_item_index])
-            # 差が2以上であればそれは間が空いている証拠
-            if current_selected_item_index - prev_selected_item_index > 1:
-                consecutively_flag = False
-                remove_items.append(emojis[current_selected_item_index])
-            else:
-                prev_selected_item_index = current_selected_item_index
+                continue
+            if emoji.checkbox.value != target:
+                emoji.checkbox.value = target
+                emoji.checkbox.update()
+                if target:
+                    self.main.selected.add(emoji)
+                else:
+                    self.main.selected.discard(emoji)
 
-        # 現選択が外されているなら含まれないend_range_indexにitemも削除対象となるはずである
-        # ただし、end_range_indexが自身の場合は無意味であるため対象外
-        if not checked and emojis[end_range_index] is not self:
-            remove_items.append(emojis[end_range_index])
-
-        # 削除対象の削除
-        for item in remove_items:
-            item.checkbox.value = False
-            item.checkbox.update()
-            self.main.selected.discard(item)
-
-        # 追加処理が必要なitemの追加(ただし現に選択したitemは後で追加するので省く)
-        for i in range(start_range_index + 1, end_range_index):
-            item = emojis[i]
-            item.checkbox.value = True
-            item.checkbox.update()
-            self.main.selected.add(item)
-
-        return True
+        self.main.multiselect_destination = self
 
     def update_name(self, name):
         self.name = name
