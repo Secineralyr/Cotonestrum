@@ -29,7 +29,6 @@ class PanelEmojis(ft.Row):
 
         self.selected: set[EmojiItem] = set()
         self.multiselect_origin: EmojiItem | None = None
-        self.multiselect_destination: EmojiItem | None = None
 
         self.count_emojis = 0
 
@@ -330,9 +329,6 @@ class EmojiList(ft.ListView):
                 e.toggle_selected(None)
             if e == self.main.multiselect_origin:
                 self.main.multiselect_origin = None
-                self.main.multiselect_destination = None
-            elif e == self.main.multiselect_destination:
-                self.main.multiselect_destination = None
 
             self.controls.remove(e)
             if _update:
@@ -808,7 +804,6 @@ class EmojiItem(ft.Container):
             else:
                 self.main.selected.discard(self)
             self.main.multiselect_origin = self
-            self.main.multiselect_destination = None
         else:
             if not keyboard_behavior.ctrl:
                 # shiftが押されていてctrlは押されていない場合 -> 排他的な範囲選択
@@ -843,8 +838,6 @@ class EmojiItem(ft.Container):
                 else:
                     self.main.selected.discard(emoji)
 
-        self.main.multiselect_destination = self
-
     def _toggle_selected_multiple(self):
         """複数選択の処理 (範囲外の項目は選択維持)"""
 
@@ -852,24 +845,12 @@ class EmojiItem(ft.Container):
         current_item_index = emojis.index(self)
         origin_item_index = emojis.index(self.main.multiselect_origin)
 
-        on_start_index = min(current_item_index, origin_item_index)
-        on_end_index = max(current_item_index, origin_item_index)
-
-        if self.main.multiselect_destination is not None:
-            previous_destination_item_index = emojis.index(self.main.multiselect_destination)
-
-            off_start_index = min(previous_destination_item_index, origin_item_index)
-            off_end_index = max(previous_destination_item_index, origin_item_index)
-        else:
-            off_start_index = -1
-            off_end_index = -1
-
+        start_index = min(current_item_index, origin_item_index)
+        end_index = max(current_item_index, origin_item_index)
 
         for index, emoji in enumerate(emojis):
-            if index >= on_start_index and index <= on_end_index:
+            if index >= start_index and index <= end_index:
                 target = True
-            elif index >= off_start_index and index <= off_end_index:
-                target = False
             else:
                 continue
             if emoji.checkbox.value != target:
@@ -879,8 +860,6 @@ class EmojiItem(ft.Container):
                     self.main.selected.add(emoji)
                 else:
                     self.main.selected.discard(emoji)
-
-        self.main.multiselect_destination = self
 
     def update_name(self, name):
         self.name = name
