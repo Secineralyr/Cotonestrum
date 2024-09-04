@@ -830,7 +830,7 @@ class EmojiItem(ft.Container):
                 target = True
             else:
                 target = False
-            if emoji.checkbox.value != target:
+            if emoji.checkbox.value != target or emoji == self:
                 emoji.checkbox.value = target
                 emoji.checkbox.update()
                 if target:
@@ -853,7 +853,7 @@ class EmojiItem(ft.Container):
                 target = True
             else:
                 continue
-            if emoji.checkbox.value != target:
+            if emoji.checkbox.value != target or emoji == self:
                 emoji.checkbox.value = target
                 emoji.checkbox.update()
                 if target:
