@@ -293,6 +293,7 @@ class DeletedEmojiList(ft.ListView):
         category = emoji_data.category
         tags = emoji_data.tags
         url = emoji_data.url
+        image_backup = emoji_data.image_backup
         sm = emoji_data.is_self_made
         license = emoji_data.license
         owner = emoji_data.owner_id
@@ -307,6 +308,7 @@ class DeletedEmojiList(ft.ListView):
             e.update_category(category)
             e.update_tags(tags)
             e.update_url(url)
+            e.update_image_backup(image_backup)
             e.update_self_made(sm)
             e.update_license(license)
             e.update_username(owner)
@@ -314,7 +316,7 @@ class DeletedEmojiList(ft.ListView):
             if e.risk_id != risk_id:
                 e.change_risk_id(risk_id)
         else:
-            e = DeletedEmojiItem(self.main, eid, name, category, tags, url, sm, license, owner, risk_id, info)
+            e = DeletedEmojiItem(self.main, eid, name, category, tags, url, image_backup, sm, license, owner, risk_id, info)
 
             self.emojis[eid] = e
 
@@ -368,7 +370,7 @@ class DeletedEmojiList(ft.ListView):
             e.reload_dropdown()
 
 class DeletedEmojiItem(ft.Container):
-    def __init__(self, main: PanelDeletedEmojis, eid: str, name: str, category: str, tags: list[str], url: str, is_self_made: bool, license: str, username: str | None, risk_id: str, info: str):
+    def __init__(self, main: PanelDeletedEmojis, eid: str, name: str, category: str, tags: list[str], url: str, image_backup: str | None, is_self_made: bool, license: str, username: str | None, risk_id: str, info: str):
         super().__init__()
 
         self.main = main
@@ -382,6 +384,7 @@ class DeletedEmojiItem(ft.Container):
         self.category = category
         self.tags = tags
         self.emoji_url = url
+        self.image_backup = image_backup
         self.license = license
         if username is not None:
             self.username = username
@@ -414,7 +417,10 @@ class DeletedEmojiItem(ft.Container):
                     title_padding=10,
                     content=ft.Image(
                         src=self.emoji_url,
-                        error_content=ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030'),
+                        error_content=ft.Image(
+                            src_base64=self.image_backup,
+                            error_content=ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030'),
+                        ),
                     )
                 )
             )
@@ -424,7 +430,10 @@ class DeletedEmojiItem(ft.Container):
                 width=46,
                 height=46,
                 fit=ft.ImageFit.CONTAIN,
-                error_content=ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030'),
+                error_content=ft.Image(
+                    src_base64=self.image_backup,
+                    error_content=ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030'),
+                ),
             ),
             on_click=show_image,
         )

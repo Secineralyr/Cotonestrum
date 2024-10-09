@@ -21,8 +21,8 @@ def pop_emoji(eid):
     else:
         return None
 
-def put_deleted_emoji(eid, misskey_id, name, category, tags, url, is_self_made, license, owner_id, risk_id, info, deleted_at):
-    deleted[eid] = DeletedEmojiData(eid, misskey_id, name, category, tags, url, is_self_made, license, owner_id, risk_id, info, deleted_at)
+def put_deleted_emoji(eid, misskey_id, name, category, tags, url, image_backup, is_self_made, license, owner_id, risk_id, info, deleted_at):
+    deleted[eid] = DeletedEmojiData(eid, misskey_id, name, category, tags, url, image_backup, is_self_made, license, owner_id, risk_id, info, deleted_at)
 
 def get_deleted_emoji(eid):
     if eid in deleted:

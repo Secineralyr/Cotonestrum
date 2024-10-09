@@ -18,7 +18,7 @@ class EmojiData():
         self.updated_at = updated_at
 
 class DeletedEmojiData():
-    def __init__(self, eid, misskey_id, name, category, tags, url, is_self_made, license, owner_id, risk_id, info, deleted_at):
+    def __init__(self, eid, misskey_id, name, category, tags, url, image_backup, is_self_made, license, owner_id, risk_id, info, deleted_at):
         self.id = eid
 
         self.misskey_id = misskey_id
@@ -26,6 +26,7 @@ class DeletedEmojiData():
         self.category = category
         self.tags = tags
         self.url = url
+        self.image_backup = image_backup
         self.is_self_made = is_self_made
         self.license = license
 

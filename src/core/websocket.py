@@ -145,7 +145,7 @@ async def reception(ws, page):
                         log_text = ''
                         is_error = False
                     case 'deleted_emoji_update':
-                        registry.put_deleted_emoji(body['id'], body['misskey_id'], body['name'], body['category'], body['tags'], body['url'], body['is_self_made'], body['license'], body['owner_id'], body['risk_id'], body['info'], body['deleted_at'])
+                        registry.put_deleted_emoji(body['id'], body['misskey_id'], body['name'], body['category'], body['tags'], body['url'], body['image_backup'], body['is_self_made'], body['license'], body['owner_id'], body['risk_id'], body['info'], body['deleted_at'])
                         panel_deleted.add_emoji(body['id'])
 
                         if page.data['root'].current_view == Views.DASHBOARD:
@@ -156,8 +156,7 @@ async def reception(ws, page):
                         is_error = False
                     case 'deleted_emojis_update':
                         for i in body:
-                            print(i['info'])
-                            registry.put_deleted_emoji(i['id'], i['misskey_id'], i['name'], i['category'], i['tags'], i['url'], i['is_self_made'], i['license'], i['owner_id'], i['risk_id'], i['info'], i['deleted_at'])
+                            registry.put_deleted_emoji(i['id'], i['misskey_id'], i['name'], i['category'], i['tags'], i['url'], i['image_backup'], i['is_self_made'], i['license'], i['owner_id'], i['risk_id'], i['info'], i['deleted_at'])
                         panel_deleted.add_emojis([i['id'] for i in body])
 
                         if page.data['root'].current_view == Views.DASHBOARD:
