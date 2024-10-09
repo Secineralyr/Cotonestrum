@@ -241,4 +241,88 @@ class EmojiFilter():
             )
         )
 
+class DeletedEmojiFilter(EmojiFilter):
+    @classmethod
+    def no_filter(cls):
+        return cls(
+            False,
+            False, False, False, False, False, False, False, False, False, False,
+            '', '', '', SelectionIsSelfMade(False, False), '', '', SelectionRiskLevel(False, False, False, False, False), SelectionReasonGenre({}), '', SelectionCheckStatus(False, False, False),
+            False, False, False, False, False
+        )
 
+    def __init__(
+        self,
+        enabled: bool,
+        enabled_name: bool,
+        enabled_category: bool,
+        enabled_tags: bool,
+        enabled_is_self_made: bool,
+        enabled_licence: bool,
+        enabled_username: bool,
+        enabled_risk_level: bool,
+        enabled_reason_genre: bool,
+        enabled_remark: bool,
+        enabled_status: bool,
+        name: str,
+        category: str,
+        tags: str,
+        is_self_made: SelectionIsSelfMade,
+        licence: str,
+        username: str,
+        risk_level: SelectionRiskLevel,
+        reason_genre: SelectionReasonGenre,
+        remark: str,
+        status: SelectionCheckStatus,
+        empty_category: bool,
+        empty_tags: bool,
+        empty_licence: bool,
+        empty_username: bool,
+        empty_remark: bool,
+    ):
+        super().__init__(enabled, enabled_name, enabled_category, enabled_tags, enabled_is_self_made, enabled_licence, enabled_username, enabled_risk_level, enabled_reason_genre, enabled_remark, enabled_status, name, category, tags, is_self_made, licence, username, risk_level, reason_genre, remark, status, empty_category, empty_tags, empty_licence, empty_username, empty_remark)
+
+    def filter(self, eid: str) -> bool:
+        emoji = registry.get_deleted_emoji(eid)
+        if emoji is None:
+            return False
+
+        name = emoji.name
+        category = emoji.category
+        tags = ' '.join(emoji.tags)
+        is_self_made = emoji.is_self_made
+        licence = emoji.license
+
+        uid = emoji.owner_id
+        user = registry.get_user(uid)
+        if user is not None:
+            username = user.username
+        else:
+            username = ''
+
+        rid = emoji.risk_id
+        risk = registry.get_risk(rid)
+        if risk is not None:
+            risk_level = risk.level
+            remark = risk.remark
+            status = risk.checked
+
+            rsid = risk.reason_genre
+        else:
+            risk_level = None
+            remark = None
+            status = 0
+            rsid = None
+
+        return (
+            (not (self.enabled and self.enabled_name) or self._filter_name(name))
+            and (not (self.enabled and self.enabled_category) or self._filter_category(category))
+            and (not (self.enabled and self.enabled_tags) or self._filter_tags(tags))
+            and (not (self.enabled and self.enabled_is_self_made) or self._filter_is_self_made(is_self_made))
+            and (not (self.enabled and self.enabled_licence) or self._filter_licence(licence))
+            and (not (self.enabled and self.enabled_username) or self._filter_username(username))
+            and (not (self.enabled and self.enabled_risk_level) or self._filter_risk_level(risk_level))
+            and (not (self.enabled and self.enabled_remark) or self._filter_remark(remark))
+            and (not (self.enabled and self.enabled_status) or self._filter_status(status))
+            and (not (self.enabled and self.enabled_reason_genre) or self._filter_reason_genre(rsid))
+        )

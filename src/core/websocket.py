@@ -56,8 +56,10 @@ def create_send_task(op, page, callback = None, error_callback = None):
 
 async def reception(ws, page):
     from app.panels.emojis import PanelEmojis
+    from app.panels.deleted import PanelDeletedEmojis
     from app.panels.logs import PanelLogs
     panel_emojis: PanelEmojis = page.data['emojis']
+    panel_deleted: PanelDeletedEmojis = page.data['deleted']
     panel_logs: PanelLogs = page.data['logs']
     while True:
         try:
@@ -140,6 +142,28 @@ async def reception(ws, page):
                             page.data['dashboard'].reload_all()
 
                         log_subject = '絵文字のデータを取得しました'
+                        log_text = ''
+                        is_error = False
+                    case 'deleted_emoji_update':
+                        registry.put_deleted_emoji(body['id'], body['misskey_id'], body['name'], body['category'], body['tags'], body['url'], body['is_self_made'], body['license'], body['owner_id'], body['risk_id'], body['info'], body['deleted_at'])
+                        panel_deleted.add_emoji(body['id'])
+
+                        if page.data['root'].current_view == Views.DASHBOARD:
+                            page.data['dashboard'].reload_all()
+
+                        log_subject = '削除済み絵文字のデータを取得しました'
+                        log_text = ''
+                        is_error = False
+                    case 'deleted_emojis_update':
+                        for i in body:
+                            print(i['info'])
+                            registry.put_deleted_emoji(i['id'], i['misskey_id'], i['name'], i['category'], i['tags'], i['url'], i['is_self_made'], i['license'], i['owner_id'], i['risk_id'], i['info'], i['deleted_at'])
+                        panel_deleted.add_emojis([i['id'] for i in body])
+
+                        if page.data['root'].current_view == Views.DASHBOARD:
+                            page.data['dashboard'].reload_all()
+
+                        log_subject = '削除済み絵文字のデータを取得しました'
                         log_text = ''
                         is_error = False
                     case 'emoji_delete':
@@ -291,6 +315,7 @@ def auth(token, page):
             create_send_task(wsmsg.FetchAllUsers(), page)
             create_send_task(wsmsg.FetchAllRisks(), page)
             create_send_task(wsmsg.FetchAllReasons(), page)
+            create_send_task(wsmsg.FetchAllDeletedEmojis(), page)
 
     def error_auth(body, err, page):
         page.data['settings'].set_auth_state(0)
@@ -327,6 +352,13 @@ def change_status(rid, status, page):
     if ws is None:
         return
     op = wsmsg.SetRiskProp(rid, checked=status)
+    create_send_task(op, page)
+
+def change_info(eid, text, page):
+    global ws
+    if ws is None:
+        return
+    op = wsmsg.SetDeletedReason(eid, text)
     create_send_task(op, page)
 
 

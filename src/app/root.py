@@ -1,11 +1,12 @@
 from typing import Optional
 import flet as ft
 
-from app.panels.dashboard import PanelDashboard
 from app.sidebar import Sidebar, SidebarArea
+from app.panels.dashboard import PanelDashboard
 from app.panels.emojis import PanelEmojis
 from app.panels.users import PanelUsers
 from app.panels.reasons import PanelReasons
+from app.panels.deleted import PanelDeletedEmojis
 from app.panels.settings import PanelSettings
 from app.panels.logs import PanelLogs
 
@@ -20,18 +21,20 @@ class Root(ft.Container):
 
     def get_panel(self, value: Views) -> Optional[Views]:
         match value:
+            case Views.DASHBOARD:
+                return self.panel_dashboard
             case Views.EMOJIS:
                 return self.panel_emojis
+            case Views.DELETED:
+                return self.panel_deleted
             case Views.USERS:
                 return self.panel_users
             case Views.REASONS:
                 return self.panel_reasons
-            case Views.SETTINGS:
-                return self.panel_settings
             case Views.LOGS:
                 return self.panel_logs
-            case Views.DASHBOARD:
-                return self.panel_dashboard
+            case Views.SETTINGS:
+                return self.panel_settings
         return None
 
     @property
@@ -49,12 +52,16 @@ class Root(ft.Container):
                 self.panel_dashboard.reload_all()
             if value == Views.EMOJIS:
                 self.panel_emojis.load_next()
+            if value == Views.DELETED:
+                self.panel_deleted.load_next()
             if value == Views.LOGS:
                 self.sidebar.button_logs.reset_badge_value()
                 self.panel_logs.log_view.scroll_to(offset=-1, duration=0)
 
             if bvalue == Views.EMOJIS:
                 self.panel_emojis.unload_all()
+            if bvalue == Views.DELETED:
+                self.panel_deleted.unload_all()
 
             if before is not None:
                 before.visible = False
@@ -73,18 +80,20 @@ class Root(ft.Container):
 
         self.panel_dashboard = PanelDashboard()
         self.panel_emojis = PanelEmojis()
+        self.panel_deleted = PanelDeletedEmojis()
         self.panel_users = PanelUsers()
         self.panel_reasons = PanelReasons()
-        self.panel_settings = PanelSettings()
         self.panel_logs = PanelLogs()
+        self.panel_settings = PanelSettings()
 
         self.panels: list[ft.Control] = [
             self.panel_dashboard,
             self.panel_emojis,
+            self.panel_deleted,
             self.panel_users,
             self.panel_reasons,
-            self.panel_settings,
             self.panel_logs,
+            self.panel_settings,
         ]
 
         for p in self.panels:
@@ -139,10 +148,11 @@ class Root(ft.Container):
 
         self.page.data['dashboard'] = self.panel_dashboard
         self.page.data['emojis'] = self.panel_emojis
+        self.page.data['deleted'] = self.panel_deleted
         self.page.data['users'] = self.panel_users
         self.page.data['reasons'] = self.panel_reasons
-        self.page.data['settings'] = self.panel_settings
         self.page.data['logs'] = self.panel_logs
+        self.page.data['settings'] = self.panel_settings
 
         self.page.data['loading'] = self.loading
 

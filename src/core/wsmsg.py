@@ -60,6 +60,18 @@ class FetchAllEmojis(IWSOperation):
                 'body': {}
             }
 
+class FetchAllDeletedEmojis(IWSOperation):
+    def __init__(self) -> None:
+        super().__init__('fetch_all_deleted_emojis')
+
+    def _build_json(self) -> dict:
+        return \
+            {
+                'op': self.op,
+                'reqid': self.reqid,
+                'body': {}
+            }
+
 class FetchUser(IWSOperation):
     def __init__(self, uid) -> None:
         super().__init__('fetch_user')
@@ -165,6 +177,23 @@ class SetRiskProp(IWSOperation):
                 'body': {
                     'id': self.id,
                     'props': self.props
+                }
+            }
+
+class SetDeletedReason(IWSOperation):
+    def __init__(self, eid, text) -> None:
+        super().__init__('set_deleted_reason')
+        self.id = eid
+        self.text = text
+
+    def _build_json(self) -> dict:
+        return \
+            {
+                'op': self.op,
+                'reqid': self.reqid,
+                'body': {
+                    'id': self.id,
+                    'info': self.text
                 }
             }
 
