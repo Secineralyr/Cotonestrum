@@ -6,7 +6,7 @@ group = 'Secineralyr'
 group_copyright = '2024 Secineralyr/Dream'
 package_name = 'Cotonestrum'
 description = 'dm emoji moderation tool'
-version = '0.0.2'
+version = '0.1.0'
 
 output_dir = './bin'
 entry_point = os.path.join('src', 'main.py')
