@@ -410,6 +410,22 @@ class DeletedEmojiItem(ft.Container):
             value=False,
             on_change=self.toggle_selected,
         )
+
+        if self.image_backup is not None:
+            error_content = ft.Image(
+                src_base64=self.image_backup,
+                error_content=ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030'),
+            )
+            error_content46 = ft.Image(
+                src_base64=self.image_backup,
+                width=46,
+                height=46,
+                fit=ft.ImageFit.CONTAIN,
+                error_content=ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030'),
+            )
+        else:
+            error_content = ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030')
+            error_content46 = ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030')
         def show_image(e):
             self.page.show_dialog(
                 ft.AlertDialog(
@@ -417,10 +433,7 @@ class DeletedEmojiItem(ft.Container):
                     title_padding=10,
                     content=ft.Image(
                         src=self.emoji_url,
-                        error_content=ft.Image(
-                            src_base64=self.image_backup,
-                            error_content=ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030'),
-                        ),
+                        error_content=error_content,
                     )
                 )
             )
@@ -430,10 +443,7 @@ class DeletedEmojiItem(ft.Container):
                 width=46,
                 height=46,
                 fit=ft.ImageFit.CONTAIN,
-                error_content=ft.Image(
-                    src_base64=self.image_backup,
-                    error_content=ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030'),
-                ),
+                error_content=error_content46,
             ),
             on_click=show_image,
         )
@@ -866,6 +876,21 @@ class DeletedEmojiItem(ft.Container):
     def update_url(self, url):
         self.url = url
         self.emoji_image.content.src = url
+        self.emoji_image.content.update()
+
+    def update_image_backup(self, image_backup):
+        self.image_backup = image_backup
+        if self.image_backup is not None:
+            error_content = ft.Image(
+                src_base64=self.image_backup,
+                width=46,
+                height=46,
+                fit=ft.ImageFit.CONTAIN,
+                error_content=ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030'),
+            )
+        else:
+            error_content = ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030')
+        self.emoji_image.content.error_content = error_content
         self.emoji_image.content.update()
 
     def update_self_made(self, is_self_made):
