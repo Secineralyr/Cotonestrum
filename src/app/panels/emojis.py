@@ -167,7 +167,7 @@ class PanelEmojis(ft.Row):
         try:
             with open('out_emojis.csv', 'wt', encoding='utf-8', newline='') as fs:
                 writer = csv.writer(fs)
-                writer.writerow(['ID', '絵文字名', 'カテゴリー', 'タグ', '自作フラグ', 'ライセンス表記', '所有者', '危険度', '理由区分', '備考', '状態'])
+                writer.writerow(['ID', '絵文字名', 'カテゴリー', 'タグ', 'URL', '自作フラグ', 'ライセンス表記', '所有者', '危険度', '理由区分', '備考', '状態'])
                 for eid in eids:
                     emoji_data = registry.get_emoji(eid)
 
