@@ -167,7 +167,7 @@ class PanelDeletedEmojis(ft.Row):
         try:
             with open('out_deleted_emojis.csv', 'wt', encoding='utf-8', newline='') as fs:
                 writer = csv.writer(fs)
-                writer.writerow(['ID', '絵文字名', 'カテゴリー', 'タグ', '自作フラグ', 'URL', 'ライセンス表記', '所有者', '危険度', '理由区分', '備考', '状態', '削除要因'])
+                writer.writerow(['ID', '絵文字名', 'カテゴリー', 'タグ', 'URL', '自作フラグ', 'ライセンス表記', '所有者', '危険度', '理由区分', '備考', '状態', '削除要因'])
                 for eid in eids:
                     emoji_data = registry.get_deleted_emoji(eid)
 
@@ -247,20 +247,22 @@ class DeletedEmojiHeader(ft.Container):
 
         self.main = main
 
-        def open_filtering_menu(e):
-            self.main.open_filtering_menu()
+        self.filter_enabled = False
 
-        self.filtering = ft.Container(
+        def open_actions_menu(e):
+            self.page.show_dialog(ActionsDialog(main, self.filter_enabled))
+
+        self.actions = ft.Container(
             content=ft.Icon(
-                name=ft.icons.FILTER_LIST_ROUNDED,
-                color='#606060',
+                name=ft.icons.MENU_ROUNDED,
+                color='#c0c0c0',
             ),
             expand=True,
             border_radius=4,
             alignment=ft.alignment.center,
             margin=4,
             ink=True,
-            on_click=open_filtering_menu,
+            on_click=open_actions_menu,
             disabled=False,
         )
 
@@ -272,7 +274,7 @@ class DeletedEmojiHeader(ft.Container):
                 ft.Container(
                     width=50,
                     alignment=ft.alignment.center,
-                    content=self.filtering,
+                    content=self.actions,
                 ),
                 ft.VerticalDivider(width=1),
                 ft.Container(
@@ -348,11 +350,7 @@ class DeletedEmojiHeader(ft.Container):
         )
 
     def set_filtering_status(self, enable: bool):
-        if enable:
-            self.filtering.content.color = '#40ff40'
-        else:
-            self.filtering.content.color = '#606060'
-        self.filtering.update()
+        self.filter_enabled = enable
 
 
 class DeletedEmojiList(ft.ListView):
@@ -1578,6 +1576,79 @@ class DeletedEmojiBulkChanger(ft.Container):
             dropdown_keys.append(rsid)
         self.dropdown_keys = dropdown_keys
         self.reason.update()
+
+class ActionsDialog(ft.AlertDialog):
+    def __init__(self, main: PanelDeletedEmojis, filter_enabled: bool):
+        super().__init__()
+
+        self.main = main
+
+        self.title_padding = 20
+
+        def open_filtering_menu(e):
+            self.main.open_filtering_menu()
+
+        def export_csv(e):
+            self.main.export_csv()
+            self.page.close_dialog()
+
+        self.filtering = ft.Container(
+            content=ft.Icon(
+                name=ft.icons.FILTER_LIST_ROUNDED,
+                color='#40ff40' if filter_enabled else '#606060',
+            ),
+            width=50,
+            height=50,
+            border_radius=4,
+            alignment=ft.alignment.center,
+            margin=4,
+            ink=True,
+            on_click=open_filtering_menu,
+            disabled=False,
+        )
+
+        self.exporting = ft.Container(
+            content=ft.Icon(
+                name=ft.icons.IOS_SHARE_OUTLINED,
+                color='#c0c0c0',
+            ),
+            width=50,
+            height=50,
+            border_radius=4,
+            alignment=ft.alignment.center,
+            margin=4,
+            ink=True,
+            on_click=export_csv,
+            disabled=False,
+        )
+
+        self.filtering_container = ft.Column(
+            controls=[
+                self.filtering,
+                ft.Text('フィルター機能')
+            ],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            tight=True,
+        )
+        self.exporting_container = ft.Column(
+            controls=[
+                self.exporting,
+                ft.Text('CSVファイルに出力')
+            ],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            tight=True,
+        )
+
+        self.content = ft.Row(
+            controls=[
+                self.filtering_container,
+                self.exporting_container,
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            spacing=50,
+        )
+
+        self.actions = []
 
 class FilteringDialog(ft.AlertDialog):
     def __init__(self, main: PanelDeletedEmojis):
