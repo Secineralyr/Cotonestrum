@@ -28,7 +28,7 @@ class TextFieldsEmojiFiltering:
 
     NEED_CHECK = '要チェック'
     CHECKED = 'チェック済'
-    NEED_RECHECK = '要再チェック\n(絵文字更新済)'
+    NEED_RECHECK = '要再チェック(絵文字更新済)'
 
     SEARCH_EMPTY = '空の項目のみを検索'
 
