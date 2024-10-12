@@ -11,8 +11,11 @@ from core.filtering import SelectionIsSelfMade, SelectionRiskLevel, SelectionRea
 
 from app.utils.control import SizeAwareControl
 from app.utils import func
+from app.resources.texts import TEXT_FIELDS
 from app.misc.loadingring import LoadingRing
 from app.sidebar import Sidebar
+
+TEXTS = TEXT_FIELDS.DELETED_EMOJIS
 
 class PanelDeletedEmojis(ft.Row):
 
@@ -191,70 +194,70 @@ class DeletedEmojiHeader(ft.Container):
                 ft.Container(
                     width=50,
                     alignment=ft.alignment.center,
-                    content=ft.Text('画像'),
+                    content=ft.Text(TEXTS.IMAGE),
                 ),
                 ft.VerticalDivider(width=1),
                 ft.Container(
                     width=160,
                     alignment=ft.alignment.center,
-                    content=ft.Text('名前'),
+                    content=ft.Text(TEXTS.NAME),
                 ),
                 ft.VerticalDivider(width=1),
                 ft.Container(
                     width=140,
                     alignment=ft.alignment.center,
-                    content=ft.Text('カテゴリー'),
+                    content=ft.Text(TEXTS.CATEGORY),
                 ),
                 ft.VerticalDivider(width=1),
                 ft.Container(
                     width=220,
                     alignment=ft.alignment.center,
-                    content=ft.Text('タグ'),
+                    content=ft.Text(TEXTS.TAG),
                 ),
                 ft.VerticalDivider(width=1),
                 ft.Container(
                     width=50,
                     alignment=ft.alignment.center,
-                    content=ft.Text('自作\nフラグ', text_align=ft.TextAlign.CENTER),
+                    content=ft.Text(TEXTS.SELFMADE, text_align=ft.TextAlign.CENTER),
                 ),
                 ft.VerticalDivider(width=1),
                 ft.Container(
                     width=240,
                     alignment=ft.alignment.center,
-                    content=ft.Text('ライセンス表記'),
+                    content=ft.Text(TEXTS.LICENSE),
                 ),
                 ft.VerticalDivider(width=1),
                 ft.Container(
                     width=140,
                     alignment=ft.alignment.center,
-                    content=ft.Text('所有者'),
+                    content=ft.Text(TEXTS.OWNER),
                 ),
                 ft.VerticalDivider(width=2, thickness=2),
                 ft.Container(
                     width=190,
                     alignment=ft.alignment.center,
-                    content=ft.Text('危険度'),
+                    content=ft.Text(TEXTS.RISK_LEVEL),
                 ),
                 ft.Container(
                     width=240,
                     alignment=ft.alignment.center,
-                    content=ft.Text('理由区分'),
+                    content=ft.Text(TEXTS.REASON_GENRE),
                 ),
                 ft.Container(
                     width=300,
                     alignment=ft.alignment.center,
-                    content=ft.Text('備考'),
+                    content=ft.Text(TEXTS.REMARK),
                 ),
                 ft.Container(
                     width=40,
                     alignment=ft.alignment.center,
-                    content=ft.Text('状態'),
+                    content=ft.Text(TEXTS.CHECK_STATUS),
                 ),
                 ft.VerticalDivider(width=2, thickness=2),
                 ft.Container(
                     width=300,
                     alignment=ft.alignment.center,
-                    content=ft.Text('削除要因'),
+                    content=ft.Text(TEXTS.DELETED_REASON),
                 ),
                 ft.Container(width=10),
             ]
@@ -390,7 +393,7 @@ class DeletedEmojiItem(ft.Container):
             self.username = username
         else:
             self.username_resolved = True
-            self.username = '<Unknown>'
+            self.username = TEXTS.USERNAME_UNRESOLVED
         self.risk_id = risk_id
         self.is_self_made = is_self_made
 
@@ -429,7 +432,7 @@ class DeletedEmojiItem(ft.Container):
         def show_image(e):
             self.page.show_dialog(
                 ft.AlertDialog(
-                    title=ft.Text('画像表示ウィンドウ'),
+                    title=ft.Text(TEXTS.IMAGE_DIALOG_TITLE),
                     title_padding=10,
                     content=ft.Image(
                         src=self.emoji_url,
@@ -605,7 +608,7 @@ class DeletedEmojiItem(ft.Container):
                 color='#ababab',
             ),
             tooltip=ft.Tooltip(
-                message='要チェック',
+                message=TEXTS.NEED_CHECK,
                 wait_duration=1000,
             ),
             expand=True,
@@ -1010,15 +1013,15 @@ class DeletedEmojiItem(ft.Container):
             case 0:
                 self.status.content.name = ft.icons.ERROR
                 self.status.content.color = '#ababab'
-                self.status.tooltip.message = '要チェック'
+                self.status.tooltip.message = TEXTS.NEED_CHECK
             case 1:
                 self.status.content.name = ft.icons.CHECK
                 self.status.content.color = '#8b8b8b'
-                self.status.tooltip.message = 'チェック済'
+                self.status.tooltip.message = TEXTS.CHECKED
             case 2:
                 self.status.content.name = ft.icons.ERROR_OUTLINE
                 self.status.content.color = '#c2c2c2'
-                self.status.tooltip.message = '要再チェック\n(絵文字更新済)'
+                self.status.tooltip.message = TEXTS.NEED_RECHECK
         if _update:
             self.status.update()
             if self.checkbox.value:
@@ -1068,7 +1071,7 @@ class MoreLoad(ft.Container):
                 ft.Container(
                     expand=True,
                     content=ft.Text(
-                        value='更に読み込む',
+                        value=TEXTS.LOAD_MORE,
                         text_align=ft.TextAlign.CENTER,
                     ),
                 ),
@@ -1442,12 +1445,12 @@ class DeletedEmojiBulkChanger(ft.Container):
                 else:
                     self.reason.content.hint_text = ''
             else:
-                self.reason.content.value = '<混在>'
-                self.reason.content.hint_text = '<混在>'
+                self.reason.content.value = TEXTS.MISC_MIXED
+                self.reason.content.hint_text = TEXTS.MISC_MIXED
             if is_common_remark:
                 self.remark.content.value = common_remark
             else:
-                self.remark.content.value = '<混在>'
+                self.remark.content.value = TEXTS.MISC_MIXED
             if is_common_status:
                 self._update_status(common_status)
             else:
@@ -1455,7 +1458,7 @@ class DeletedEmojiBulkChanger(ft.Container):
             if is_common_info:
                 self.delete_info.content.value = common_info
             else:
-                self.delete_info.content.value = '<混在>'
+                self.delete_info.content.value = TEXTS.MISC_MIXED
         self.update()
 
     def _update_status(self, status):
@@ -1464,23 +1467,23 @@ class DeletedEmojiBulkChanger(ft.Container):
             case -2:
                 self.status.content.name = ft.icons.REMOVE
                 self.status.content.color = '#00000000'
-                self.status.tooltip = '<未選択>'
+                self.status.tooltip = TEXTS.MISC_NO_SELECTED
             case -1:
                 self.status.content.name = ft.icons.REMOVE
                 self.status.content.color = '#606060'
-                self.status.tooltip = '<混在>'
+                self.status.tooltip = TEXTS.MISC_MIXED
             case 0:
                 self.status.content.name = ft.icons.ERROR
                 self.status.content.color = '#ababab'
-                self.status.tooltip = '要チェック'
+                self.status.tooltip = TEXTS.NEED_CHECK
             case 1:
                 self.status.content.name = ft.icons.CHECK
                 self.status.content.color = '#8b8b8b'
-                self.status.tooltip = 'チェック済'
+                self.status.tooltip = TEXTS.CHECKED
             case 2:
                 self.status.content.name = ft.icons.ERROR_OUTLINE
                 self.status.content.color = '#c2c2c2'
-                self.status.tooltip = '要再チェック\n(絵文字更新済)'
+                self.status.tooltip = TEXTS.NEED_RECHECK
 
     def reload_dropdown(self):
         dropdown_keys = []
@@ -1498,7 +1501,7 @@ class FilteringDialog(ft.AlertDialog):
 
         self.main = main
 
-        self.title = ft.Text('フィルター設定')
+        self.title = ft.Text(TEXTS.FILTERING.DIALOG_TITLE)
         self.title_padding = 10
 
         def cancel_filtering(e):
@@ -1514,7 +1517,7 @@ class FilteringDialog(ft.AlertDialog):
         self.actions = [
             ft.OutlinedButton(
                 content=ft.Text(
-                    value='キャンセル',
+                    value=TEXTS.FILTERING.BUTTON_CANCEL,
                     style=ft.TextStyle(weight=ft.FontWeight.BOLD),
                 ),
                 style=ft.ButtonStyle(
@@ -1525,7 +1528,7 @@ class FilteringDialog(ft.AlertDialog):
             ),
             ft.FilledButton(
                 content=ft.Text(
-                    value='OK',
+                    value=TEXTS.FILTERING.BUTTON_OK,
                     style=ft.TextStyle(weight=ft.FontWeight.BOLD),
                 ),
                 style=ft.ButtonStyle(
@@ -1544,7 +1547,7 @@ class FilteringDialogContent(ft.Column):
         reason_genre_checkboxes = [
             ReasonGenreCheckbox(
                 None,
-                label='未設定',
+                label=TEXTS.FILTERING.MISC_NONSET,
                 value=filter.reason_genre.mapping[None] if None in filter.reason_genre.mapping else False,
             ),
         ]
@@ -1563,7 +1566,7 @@ class FilteringDialogContent(ft.Column):
             self.main_container.update()
 
         self.main_switch = ft.Switch(
-            label='フィルタ機能',
+            label=TEXTS.FILTERING.MAIN,
             splash_radius=0,
             value=filter.enabled,
             on_change=toggle_main_switch,
@@ -1574,8 +1577,8 @@ class FilteringDialogContent(ft.Column):
         self.tags = EmptyOrTextField(filter.tags, filter.empty_tags)
         self.is_self_made = ft.Column(
             controls=[
-                ft.Checkbox(label='はい', value=filter.is_self_made.yes),
-                ft.Checkbox(label='いいえ', value=filter.is_self_made.no),
+                ft.Checkbox(label=TEXTS.FILTERING.SELFMADE_YES, value=filter.is_self_made.yes),
+                ft.Checkbox(label=TEXTS.FILTERING.SELFMADE_NO, value=filter.is_self_made.no),
             ],
             spacing=0,
         )
@@ -1583,11 +1586,11 @@ class FilteringDialogContent(ft.Column):
         self.username = EmptyOrTextField(filter.username, filter.empty_username)
         self.risk_level = ft.Column(
             controls=[
-                ft.Checkbox(label='未設定', value=filter.risk_level.notset),
-                ft.Checkbox(label='低', value=filter.risk_level.low),
-                ft.Checkbox(label='中', value=filter.risk_level.medium),
-                ft.Checkbox(label='高', value=filter.risk_level.high),
-                ft.Checkbox(label='重大', value=filter.risk_level.danger),
+                ft.Checkbox(label=TEXTS.FILTERING.MISC_NONSET, value=filter.risk_level.notset),
+                ft.Checkbox(label=TEXTS.FILTERING.RISK_LEVEL_LOW, value=filter.risk_level.low),
+                ft.Checkbox(label=TEXTS.FILTERING.RISK_LEVEL_MEDIUM, value=filter.risk_level.medium),
+                ft.Checkbox(label=TEXTS.FILTERING.RISK_LEVEL_HIGH, value=filter.risk_level.high),
+                ft.Checkbox(label=TEXTS.FILTERING.RISK_LEVEL_DANGER, value=filter.risk_level.danger),
             ],
             spacing=0,
         )
@@ -1598,61 +1601,61 @@ class FilteringDialogContent(ft.Column):
         self.remark = EmptyOrTextField(filter.remark, filter.empty_remark)
         self.status = ft.Column(
             controls=[
-                ft.Checkbox(label='要チェック', value=filter.status.need_check),
-                ft.Checkbox(label='要再チェック', value=filter.status.need_recheck),
-                ft.Checkbox(label='チェック済み', value=filter.status.checked),
+                ft.Checkbox(label=TEXTS.FILTERING.NEED_CHECK, value=filter.status.need_check),
+                ft.Checkbox(label=TEXTS.FILTERING.CHECKED, value=filter.status.need_recheck),
+                ft.Checkbox(label=TEXTS.FILTERING.NEED_RECHECK, value=filter.status.checked),
             ],
             spacing=0,
         )
 
         self.name_container = ControlWithSwitch(
             content=self.name,
-            label='名前',
+            label=TEXTS.FILTERING.NAME,
             enable=filter.enabled_name,
         )
         self.category_container = ControlWithSwitch(
             content=self.category,
-            label='カテゴリー',
+            label=TEXTS.FILTERING.CATEGORY,
             enable=filter.enabled_category,
         )
         self.tags_container = ControlWithSwitch(
             content=self.tags,
-            label='タグ',
+            label=TEXTS.FILTERING.TAG,
             enable=filter.enabled_tags,
         )
         self.is_self_made_container = ControlWithSwitch(
             content=self.is_self_made,
-            label='自作フラグ',
+            label=TEXTS.FILTERING.SELFMADE,
             enable=filter.enabled_is_self_made,
         )
         self.licence_container = ControlWithSwitch(
             content=self.licence,
-            label='ライセンス表記',
+            label=TEXTS.FILTERING.LICENSE,
             enable=filter.enabled_licence,
         )
         self.username_container = ControlWithSwitch(
             content=self.username,
-            label='所有者',
+            label=TEXTS.FILTERING.OWNER,
             enable=filter.enabled_username,
         )
         self.risk_level_container = ControlWithSwitch(
             content=self.risk_level,
-            label='危険度',
+            label=TEXTS.FILTERING.RISK_LEVEL,
             enable=filter.enabled_risk_level,
         )
         self.reason_genre_container = ControlWithSwitch(
             content=self.reason_genre,
-            label='理由区分',
+            label=TEXTS.FILTERING.REASON_GENRE,
             enable=filter.enabled_reason_genre,
         )
         self.remark_container = ControlWithSwitch(
             content=self.remark,
-            label='備考',
+            label=TEXTS.FILTERING.REMARK,
             enable=filter.enabled_remark,
         )
         self.status_container = ControlWithSwitch(
             content=self.status,
-            label='状態',
+            label=TEXTS.FILTERING.CHECK_STATUS,
             enable=filter.enabled_status,
         )
 
@@ -1779,7 +1782,7 @@ class EmptyOrTextField(ft.Row):
             disabled=empty,
         )
         self.cb = ft.Checkbox(
-            label='空の項目のみを検索',
+            label=TEXTS.FILTERING.SEARCH_EMPTY,
             value=empty,
             on_change=toggle_empty,
         )
