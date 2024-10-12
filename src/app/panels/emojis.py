@@ -163,74 +163,81 @@ class PanelEmojis(ft.Row):
         self.loading = True
         self.lock()
 
-        eids = [eid for eid in self.filtered_emojis if eid not in self.list_emoji.emojis.keys()]
-        with open('out_emojis.csv', 'wt', encoding='utf-8', newline='') as fs:
-            writer = csv.writer(fs)
-            writer.writerow(['ID', '絵文字名', 'カテゴリー', 'タグ', '自作フラグ', 'ライセンス表記', '所有者', '危険度', '理由区分', '備考', '状態'])
-            for eid in eids:
-                emoji_data = registry.get_emoji(eid)
+        eids = [eid for eid in self.filtered_emojis]
+        try:
+            with open('out_emojis.csv', 'wt', encoding='utf-8', newline='') as fs:
+                writer = csv.writer(fs)
+                writer.writerow(['ID', '絵文字名', 'カテゴリー', 'タグ', '自作フラグ', 'ライセンス表記', '所有者', '危険度', '理由区分', '備考', '状態'])
+                for eid in eids:
+                    emoji_data = registry.get_emoji(eid)
 
-                misskey_id = emoji_data.misskey_id
-                name = emoji_data.name
-                category = emoji_data.category
-                tags = emoji_data.tags
-                url = emoji_data.url
-                if emoji_data.is_self_made:
-                    is_self_made = 'はい'
-                else:
-                    is_self_made = 'いいえ'
-                license = emoji_data.license
+                    misskey_id = emoji_data.misskey_id
+                    name = emoji_data.name
+                    category = emoji_data.category
+                    tags = emoji_data.tags
+                    url = emoji_data.url
+                    if emoji_data.is_self_made:
+                        is_self_made = 'はい'
+                    else:
+                        is_self_made = 'いいえ'
+                    license = emoji_data.license
 
-                owner_data = registry.get_user(emoji_data.owner_id)
-                risk_data = registry.get_risk(emoji_data.risk_id)
+                    owner_data = registry.get_user(emoji_data.owner_id)
+                    risk_data = registry.get_risk(emoji_data.risk_id)
 
-                if owner_data is not None:
-                    username = owner_data.username
-                else:
-                    username = '<不明>'
+                    if owner_data is not None:
+                        username = owner_data.username
+                    else:
+                        username = '<不明>'
 
-                if risk_data is not None:
-                    match risk_data.level:
-                        case None:
-                            level = '<未設定>'
-                        case 0:
-                            level = '低'
-                        case 1:
-                            level = '中'
-                        case 2:
-                            level = '高'
-                        case 3:
-                            level = '重大'
-                        case _:
-                            level = '<不明>'
+                    if risk_data is not None:
+                        match risk_data.level:
+                            case None:
+                                level = '<未設定>'
+                            case 0:
+                                level = '低'
+                            case 1:
+                                level = '中'
+                            case 2:
+                                level = '高'
+                            case 3:
+                                level = '重大'
+                            case _:
+                                level = '<不明>'
 
-                    reason_data = registry.get_reason(risk_data.reason_genre)
-                    if reason_data is not None:
-                        reason_text = reason_data.text
+                        reason_data = registry.get_reason(risk_data.reason_genre)
+                        if reason_data is not None:
+                            reason_text = reason_data.text
+                        else:
+                            # unreachable if work correctly
+                            reason_text = '<不明>'
+
+                        remark = risk_data.remark
+
+                        match risk_data.checked:
+                            case 0:
+                                checked = '要チェック'
+                            case 0:
+                                checked = 'チェック済'
+                            case 0:
+                                checked = '要再チェック(絵文字更新済)'
                     else:
                         # unreachable if work correctly
+                        level = '<不明>'
                         reason_text = '<不明>'
+                        remark = '<不明>'
+                        checked = '<不明>'
 
-                    remark = risk_data.remark
-
-                    match risk_data.checked:
-                        case 0:
-                            checked = '要チェック'
-                        case 0:
-                            checked = 'チェック済'
-                        case 0:
-                            checked = '要再チェック(絵文字更新済)'
-                else:
-                    # unreachable if work correctly
-                    level = '<不明>'
-                    reason_text = '<不明>'
-                    remark = '<不明>'
-                    checked = '<不明>'
-
-                writer.writerow([misskey_id, name, category, tags, url, is_self_made, license, username, level, reason_text, remark, checked])
+                    writer.writerow([misskey_id, name, category, tags, url, is_self_made, license, username, level, reason_text, remark, checked])
+            succeed = True
+        except Exception:
+            traceback.print_exc()
+            succeed = False
 
         self.unlock()
         self.loading = False
+
+        return succeed
 
 
 class EmojiHeader(ft.Container):
