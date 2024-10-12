@@ -1,5 +1,7 @@
 # Added manually
 setting.json
+out_emojis.csv
+out_deleted_emojis.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
