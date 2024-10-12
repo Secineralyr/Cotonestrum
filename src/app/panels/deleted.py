@@ -205,7 +205,7 @@ class PanelDeletedEmojis(ft.Row):
                             level = '<不明>'
 
                     reason_data = registry.get_reason(risk_data.reason_genre)
-                    if risk_data is not None:
+                    if reason_data is not None:
                         reason_text = reason_data.text
                     else:
                         # unreachable if work correctly
