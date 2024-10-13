@@ -1620,8 +1620,6 @@ class ActionsDialog(ft.AlertDialog):
 
         self.main = main
 
-        self.title_padding = 20
-
         def open_filtering_menu(e):
             self.main.open_filtering_menu()
 
@@ -1636,12 +1634,6 @@ class ActionsDialog(ft.AlertDialog):
             ),
             width=50,
             height=50,
-            border_radius=4,
-            alignment=ft.alignment.center,
-            margin=4,
-            ink=True,
-            on_click=open_filtering_menu,
-            disabled=False,
         )
 
         self.exporting = ft.Container(
@@ -1651,7 +1643,38 @@ class ActionsDialog(ft.AlertDialog):
             ),
             width=50,
             height=50,
-            border_radius=4,
+        )
+
+        self.filtering_container = ft.Container(
+            ft.Column(
+                controls=[
+                    self.filtering,
+                    ft.Text('フィルター機能', text_align=ft.TextAlign.CENTER)
+                ],
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                tight=True,
+            ),
+            width=150,
+            height=150,
+            border_radius=8,
+            alignment=ft.alignment.center,
+            margin=4,
+            ink=True,
+            on_click=open_filtering_menu,
+            disabled=False,
+        )
+        self.exporting_container = ft.Container(
+            content=ft.Column(
+                controls=[
+                    self.exporting,
+                    ft.Text('CSVファイルに出力', text_align=ft.TextAlign.CENTER)
+                ],
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                tight=True,
+            ),
+            width=150,
+            height=150,
+            border_radius=8,
             alignment=ft.alignment.center,
             margin=4,
             ink=True,
@@ -1659,30 +1682,16 @@ class ActionsDialog(ft.AlertDialog):
             disabled=False,
         )
 
-        self.filtering_container = ft.Column(
-            controls=[
-                self.filtering,
-                ft.Text('フィルター機能')
-            ],
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            tight=True,
-        )
-        self.exporting_container = ft.Column(
-            controls=[
-                self.exporting,
-                ft.Text('CSVファイルに出力')
-            ],
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            tight=True,
-        )
-
-        self.content = ft.Row(
-            controls=[
-                self.filtering_container,
-                self.exporting_container,
-            ],
-            alignment=ft.MainAxisAlignment.CENTER,
-            spacing=50,
+        self.content = ft.Container(
+            content=ft.Row(
+                controls=[
+                    self.filtering_container,
+                    self.exporting_container,
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=20,
+            ),
+            margin=ft.Margin(10, 20, 10, 0)
         )
 
         self.actions = []
