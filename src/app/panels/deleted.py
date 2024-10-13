@@ -380,6 +380,8 @@ class DeletedEmojiHeader(ft.Container):
 
     def set_filtering_status(self, enable: bool):
         self.filter_enabled = enable
+        self.actions.content.color = '#40ff40' if self.filter_enabled else '#606060'
+        self.actions.content.update()
 
 
 class DeletedEmojiList(ft.ListView):
