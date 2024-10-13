@@ -1,4 +1,4 @@
-flet == 0.24.0
+flet == 0.24.1
 websockets
 pyinstaller
 keyboard == 0.13.5

@@ -8,19 +8,18 @@ import flet as ft
 from app.utils.data import KeyboardBehaviorData
 from core import registry
 from core import websocket
-from core.filtering import EmojiFilter
+from core.filtering import DeletedEmojiFilter
 from core.filtering import SelectionIsSelfMade, SelectionRiskLevel, SelectionReasonGenre, SelectionCheckStatus
 
 from app.utils.control import SizeAwareControl
-from app.utils.control import IOSAlignment
 from app.utils import func
 from app.resources.texts import TEXT_FIELDS
 from app.misc.loadingring import LoadingRing
 from app.sidebar import Sidebar
 
-TEXTS = TEXT_FIELDS.EMOJIS
+TEXTS = TEXT_FIELDS.DELETED_EMOJIS
 
-class PanelEmojis(ft.Row):
+class PanelDeletedEmojis(ft.Row):
 
     def __init__(self):
         super().__init__()
@@ -29,17 +28,17 @@ class PanelEmojis(ft.Row):
 
         self.all_emojis = {} # Use dict with value=None because python doesn't has ordered set.
 
-        self.filter = EmojiFilter.no_filter()
+        self.filter = DeletedEmojiFilter.no_filter()
         self.filtered_emojis = {}
 
-        self.selected: set[EmojiItem] = set()
-        self.multiselect_origin: EmojiItem | None = None
+        self.selected: set[DeletedEmojiItem] = set()
+        self.multiselect_origin: DeletedEmojiItem | None = None
 
         self.count_emojis = 0
 
-        self.header = EmojiHeader(self)
-        self.list_emoji = EmojiList(self)
-        self.bulk = EmojiBulkChanger(self)
+        self.header = DeletedEmojiHeader(self)
+        self.list_emoji = DeletedEmojiList(self)
+        self.bulk = DeletedEmojiBulkChanger(self)
 
         self.expand = True
         self.scroll = ft.ScrollMode.ALWAYS
@@ -48,7 +47,7 @@ class PanelEmojis(ft.Row):
 
         self.controls = [
             ft.Container(
-                width=1839,
+                width=2141,
                 content=ft.Column(
                     expand=True,
                     alignment=ft.alignment.top_left,
@@ -151,7 +150,7 @@ class PanelEmojis(ft.Row):
     def open_filtering_menu(self):
         self.page.show_dialog(FilteringDialog(self))
 
-    def update_filter(self, filter: EmojiFilter):
+    def update_filter(self, filter: DeletedEmojiFilter):
         self.filter = filter
         self.header.set_filtering_status(filter.get_filter_status())
         eids = list(self.all_emojis.keys())
@@ -163,9 +162,9 @@ class PanelEmojis(ft.Row):
         try:
             with open(filename, 'wt', encoding='utf-8', newline='') as fs:
                 writer = csv.writer(fs)
-                writer.writerow(['ID', '絵文字名', 'カテゴリー', 'タグ', 'URL', '自作フラグ', 'ライセンス表記', '所有者', '危険度', '理由区分', '備考', '状態'])
+                writer.writerow(['ID', '絵文字名', 'カテゴリー', 'タグ', 'URL', '自作フラグ', 'ライセンス表記', '所有者', '危険度', '理由区分', '備考', '状態', '削除要因'])
                 for eid in eids:
-                    emoji_data = registry.get_emoji(eid)
+                    emoji_data = registry.get_deleted_emoji(eid)
 
                     misskey_id = emoji_data.misskey_id
                     name = emoji_data.name
@@ -177,6 +176,7 @@ class PanelEmojis(ft.Row):
                     else:
                         is_self_made = 'いいえ'
                     license = emoji_data.license
+                    info = emoji_data.info
 
                     owner_data = registry.get_user(emoji_data.owner_id)
                     risk_data = registry.get_risk(emoji_data.risk_id)
@@ -224,7 +224,7 @@ class PanelEmojis(ft.Row):
                         remark = '<不明>'
                         checked = '<不明>'
 
-                    writer.writerow([misskey_id, name, category, tags, url, is_self_made, license, username, level, reason_text, remark, checked])
+                    writer.writerow([misskey_id, name, category, tags, url, is_self_made, license, username, level, reason_text, remark, checked, info])
             succeed = True
         except Exception:
             traceback.print_exc()
@@ -238,7 +238,7 @@ class PanelEmojis(ft.Row):
 
         eids = [eid for eid in self.filtered_emojis]
         if len(eids) > 0:
-            if self.write_csv(eids, 'out_emojis.csv'):
+            if self.write_csv(eids, 'out_deleted_emojis.csv'):
                 ret = len(eids)
             else:
                 ret = None
@@ -257,7 +257,7 @@ class PanelEmojis(ft.Row):
 
         eids = [eid for eid, emoji in self.list_emoji.emojis.items() if emoji.checkbox.value]
         if len(eids) > 0:
-            if self.write_csv(eids, 'out_emojis.csv'):
+            if self.write_csv(eids, 'out_deleted_emojis.csv'):
                 ret = len(eids)
             else:
                 ret = None
@@ -270,8 +270,8 @@ class PanelEmojis(ft.Row):
         return ret
 
 
-class EmojiHeader(ft.Container):
-    def __init__(self, main: PanelEmojis):
+class DeletedEmojiHeader(ft.Container):
+    def __init__(self, main: PanelDeletedEmojis):
         super().__init__()
 
         self.main = main
@@ -368,6 +368,12 @@ class EmojiHeader(ft.Container):
                     alignment=ft.alignment.center,
                     content=ft.Text(TEXTS.CHECK_STATUS),
                 ),
+                ft.VerticalDivider(width=2, thickness=2),
+                ft.Container(
+                    width=300,
+                    alignment=ft.alignment.center,
+                    content=ft.Text(TEXTS.DELETED_REASON),
+                ),
                 ft.Container(width=10),
             ]
         )
@@ -377,13 +383,14 @@ class EmojiHeader(ft.Container):
         self.actions.content.color = '#40ff40' if self.filter_enabled else '#c0c0c0'
         self.actions.content.update()
 
-class EmojiList(ft.ListView):
-    def __init__(self, main: PanelEmojis):
+
+class DeletedEmojiList(ft.ListView):
+    def __init__(self, main: PanelDeletedEmojis):
         super().__init__()
 
         self.main = main
 
-        self.emojis: dict[str, EmojiItem] = {}
+        self.emojis: dict[str, DeletedEmojiItem] = {}
 
         self.expand = True
 
@@ -392,9 +399,9 @@ class EmojiList(ft.ListView):
         self.controls = []
 
     def update_emoji(self, eid: str, _update=True):
-        emoji_data = registry.get_emoji(eid)
+        emoji_data = registry.get_deleted_emoji(eid)
         if emoji_data is None:
-            print(f"Emoji '{eid}' couldn't found in registry.")
+            print(f"Deleted emoji '{eid}' couldn't found in registry.")
             return
 
         eid = emoji_data.id
@@ -402,26 +409,30 @@ class EmojiList(ft.ListView):
         category = emoji_data.category
         tags = emoji_data.tags
         url = emoji_data.url
+        image_backup = emoji_data.image_backup
         sm = emoji_data.is_self_made
         license = emoji_data.license
         owner = emoji_data.owner_id
         risk_id = emoji_data.risk_id
+        info = emoji_data.info
         if owner is not None:
             owner = f'<{owner}>'
 
         if eid in self.emojis:
-            e: EmojiItem = self.emojis[eid]
+            e: DeletedEmojiItem = self.emojis[eid]
             e.update_name(name)
             e.update_category(category)
             e.update_tags(tags)
             e.update_url(url)
+            e.update_image_backup(image_backup)
             e.update_self_made(sm)
             e.update_license(license)
             e.update_username(owner)
+            e.update_info(info)
             if e.risk_id != risk_id:
                 e.change_risk_id(risk_id)
         else:
-            e = EmojiItem(self.main, name, category, tags, url, sm, license, owner, risk_id)
+            e = DeletedEmojiItem(self.main, eid, name, category, tags, url, image_backup, sm, license, owner, risk_id, info)
 
             self.emojis[eid] = e
 
@@ -474,11 +485,13 @@ class EmojiList(ft.ListView):
         for e in self.emojis.values():
             e.reload_dropdown()
 
-class EmojiItem(ft.Container):
-    def __init__(self, main: PanelEmojis, name: str, category: str, tags: list[str], url: str, is_self_made: bool, license: str, username: str | None, risk_id: str):
+class DeletedEmojiItem(ft.Container):
+    def __init__(self, main: PanelDeletedEmojis, eid: str, name: str, category: str, tags: list[str], url: str, image_backup: str | None, is_self_made: bool, license: str, username: str | None, risk_id: str, info: str):
         super().__init__()
 
         self.main = main
+
+        self.eid = eid
 
         self.username_resolved = False
         self.dropdown_keys = []
@@ -487,6 +500,7 @@ class EmojiItem(ft.Container):
         self.category = category
         self.tags = tags
         self.emoji_url = url
+        self.image_backup = image_backup
         self.license = license
         if username is not None:
             self.username = username
@@ -495,6 +509,8 @@ class EmojiItem(ft.Container):
             self.username = TEXTS.USERNAME_UNRESOLVED
         self.risk_id = risk_id
         self.is_self_made = is_self_made
+
+        self.info = info
 
         # 上書き用urlが存在するなら絵文字の画像urlを上書きする
         override_image_url = main.page.data['settings'].override_image_url
@@ -510,6 +526,22 @@ class EmojiItem(ft.Container):
             value=False,
             on_change=self.toggle_selected,
         )
+
+        if self.image_backup is not None:
+            error_content = ft.Image(
+                src_base64=self.image_backup,
+                error_content=ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030'),
+            )
+            error_content46 = ft.Image(
+                src_base64=self.image_backup,
+                width=46,
+                height=46,
+                fit=ft.ImageFit.CONTAIN,
+                error_content=ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030'),
+            )
+        else:
+            error_content = ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030')
+            error_content46 = ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030')
         def show_image(e):
             self.page.show_dialog(
                 ft.AlertDialog(
@@ -517,7 +549,7 @@ class EmojiItem(ft.Container):
                     title_padding=10,
                     content=ft.Image(
                         src=self.emoji_url,
-                        error_content=ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030'),
+                        error_content=error_content,
                     )
                 )
             )
@@ -527,7 +559,7 @@ class EmojiItem(ft.Container):
                 width=46,
                 height=46,
                 fit=ft.ImageFit.CONTAIN,
-                error_content=ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030'),
+                error_content=error_content46,
             ),
             on_click=show_image,
         )
@@ -538,40 +570,13 @@ class EmojiItem(ft.Container):
             ),
             expand=True,
         )
-        def hover_name(e):
-            self.copy_icon.opacity = 1. if e.data == 'true' else 0.
-            self.copy_icon.update()
-        self.copy_icon = ft.Container(
-            ft.Icon(
-                name=ft.icons.COPY,
-                size=18,
-            ),
-            opacity=0.,
-            animate_opacity=300,
-        )
         self.emoji_name_container = ft.Container(
-            ft.Stack(
-                controls=[
-                    IOSAlignment(
-                        content=self.copy_icon,
-                        horizontal=ft.MainAxisAlignment.END,
-                        vertical=ft.MainAxisAlignment.CENTER,
-                    ),
-                    IOSAlignment(
-                        content=self.emoji_name,
-                        horizontal=ft.MainAxisAlignment.START,
-                        vertical=ft.MainAxisAlignment.CENTER,
-                    ),
-                ],
-                alignment=ft.alignment.center_left,
-            ),
+            content=self.emoji_name,
             expand=True,
             padding=5,
             margin=5,
             border_radius=3,
             ink=True,
-            on_click=self.create_copier(self.name),
-            on_hover=hover_name,
         )
         self.emoji_category = ft.Container(
             content=SizeAwareControl(
@@ -645,70 +650,39 @@ class EmojiItem(ft.Container):
             expand=True,
         )
 
-        def change_risk_level(e):
-            level = None
-            match self.risk_level.value:
-                case 'risk_0':
-                    level = 0
-                case 'risk_1':
-                    level = 1
-                case 'risk_2':
-                    level = 2
-                case 'risk_3':
-                    level = 3
-                case _:
-                    level = None
-            self.change_risk_level(level)
+        self._info = ''
 
-        def change_reason(e):
-            rsid = self.reason.content.value
-            if self.reason.content.value == 'none':
-                rsid = None
-            self.change_reason(rsid)
+        def focus_info(e):
+            self._info = self.delete_info.content.value
 
-        self._remark = ''
-
-        def focus_remark(e):
-            self._remark = self.remark.content.value
-
-        def change_remark(e):
-            if self._remark != self.remark.content.value:
-                self._remark = self.remark.content.value
-                text = self.remark.content.value
-                self.change_remark(text)
-
-        def change_status(e):
-            match self.status_value:
-                case 0:
-                    self.change_status(1)
-                case 1:
-                    self.change_status(0)
-                case 2:
-                    self.change_status(1)
+        def change_info(e):
+            if self._info != self.delete_info.content.value:
+                self._info = self.delete_info.content.value
+                text = self.delete_info.content.value
+                self.change_info(text)
 
         self.risk_level = ft.RadioGroup(
             content=ft.Row(
                 controls=[
                     ft.Container(
-                        content=ft.Radio(value='risk_0', fill_color='#5bae5b', toggleable=True),
+                        content=ft.Radio(value='risk_0', fill_color='#8b8b8b', toggleable=True),
                         width=40,
                     ),
                     ft.Container(
-                        ft.Radio(value='risk_1', fill_color='#c1d36e', toggleable=True),
+                        ft.Radio(value='risk_1', fill_color='#c2c2c2', toggleable=True),
                         width=40,
                     ),
                     ft.Container(
-                        ft.Radio(value='risk_2', fill_color='#cdad4b', toggleable=True),
+                        ft.Radio(value='risk_2', fill_color='#ababab', toggleable=True),
                         width=40,
                     ),
                     ft.Container(
-                        ft.Radio(value='risk_3', fill_color='#cc4444', toggleable=True),
+                        ft.Radio(value='risk_3', fill_color='#6c6c6c', toggleable=True),
                         width=40,
                     ),
                 ],
                 spacing=10,
             ),
-            on_change=change_risk_level,
             disabled=True,
         )
         self.reason = ft.Container(
@@ -723,7 +697,6 @@ class EmojiItem(ft.Container):
                 fill_color='#10ffffff',
                 text_size=14,
                 content_padding=ft.padding.symmetric(horizontal=10),
-                on_change=change_reason,
             ),
             alignment=ft.alignment.center_left,
             expand=True,
@@ -737,9 +710,6 @@ class EmojiItem(ft.Container):
                 filled=True,
                 fill_color='#10ffffff',
                 content_padding=ft.padding.symmetric(horizontal=10),
-                on_focus=focus_remark,
-                on_blur=change_remark,
-                on_submit=change_remark,
             ),
             expand=True,
             padding=4,
@@ -748,7 +718,7 @@ class EmojiItem(ft.Container):
         self.status = ft.Container(
             content=ft.Icon(
                 name=ft.icons.ERROR_ROUNDED,
-                color='#cdad4b',
+                color='#ababab',
             ),
             tooltip=ft.Tooltip(
                 message=TEXTS.NEED_CHECK,
@@ -759,8 +729,22 @@ class EmojiItem(ft.Container):
             alignment=ft.alignment.center,
             margin=4,
             ink=True,
-            on_click=change_status,
             disabled=True,
+        )
+        self.delete_info = ft.Container(
+            content=ft.TextField(
+                value=self.info,
+                expand=True,
+                border_color='transparent',
+                filled=True,
+                fill_color='#10ffffff',
+                content_padding=ft.padding.symmetric(horizontal=10),
+                on_focus=focus_info,
+                on_blur=change_info,
+                on_submit=change_info,
+            ),
+            expand=True,
+            padding=4,
         )
 
         self.height = 50
@@ -845,6 +829,12 @@ class EmojiItem(ft.Container):
                     alignment=ft.alignment.center_left,
                     content=self.status,
                 ),
+                ft.VerticalDivider(width=2, thickness=2),
+                ft.Container(
+                    width=300,
+                    alignment=ft.alignment.center_left,
+                    content=self.delete_info,
+                ),
                 ft.Container(width=10),
             ]
         )
@@ -853,19 +843,6 @@ class EmojiItem(ft.Container):
         self.reload_dropdown()
         self.page.run_task(self.get_username)
         self.page.run_task(self.get_risk)
-
-    def create_copier(self, text: str):
-        def copy_emoji_name(e):
-            self.page.set_clipboard(text)
-            if self.copy_icon.opacity == 0.:
-                self.copy_icon.opacity = 1.
-                self.copy_icon.update()
-                async def icon_off():
-                    await asyncio.sleep(0.3)
-                    self.copy_icon.opacity = 0.
-                    self.copy_icon.update()
-                self.page.run_task(icon_off)
-        return copy_emoji_name
 
 
     def create_checker_need_tooltip(self, threshold_width, message):
@@ -1017,6 +994,21 @@ class EmojiItem(ft.Container):
         self.emoji_image.content.src = url
         self.emoji_image.content.update()
 
+    def update_image_backup(self, image_backup):
+        self.image_backup = image_backup
+        if self.image_backup is not None:
+            error_content = ft.Image(
+                src_base64=self.image_backup,
+                width=46,
+                height=46,
+                fit=ft.ImageFit.CONTAIN,
+                error_content=ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030'),
+            )
+        else:
+            error_content = ft.Icon(ft.icons.BROKEN_IMAGE, color='#303030')
+        self.emoji_image.content.error_content = error_content
+        self.emoji_image.content.update()
+
     def update_self_made(self, is_self_made):
         self.is_self_made = is_self_made
         self.emoji_self_made.name = ft.icons.CHECK_ROUNDED if self.is_self_made else ft.icons.CLOSE_ROUNDED
@@ -1091,7 +1083,6 @@ class EmojiItem(ft.Container):
         self.update()
 
     def update_risk_level(self, level, _update=True):
-        self.risk_level.disabled = False
         match level:
             case None:
                 self.risk_level.value = None
@@ -1109,7 +1100,6 @@ class EmojiItem(ft.Container):
                 self.main.bulk.update_values()
 
     def update_reason(self, rsid, _update=True):
-        self.reason.disabled = False
         self.reason.content.value = rsid
         if rsid is not None:
             if rsid in self.dropdown_keys:
@@ -1124,7 +1114,6 @@ class EmojiItem(ft.Container):
                 self.main.bulk.update_values()
 
     def update_remark(self, text, _update=True):
-        self.remark.disabled = False
         self.remark.content.value = text
         if _update:
             self.remark.update()
@@ -1132,23 +1121,29 @@ class EmojiItem(ft.Container):
                 self.main.bulk.update_values()
 
     def update_status(self, status, _update=True):
-        self.status.disabled = False
         self.status_value = status
         match status:
             case 0:
                 self.status.content.name = ft.icons.ERROR
-                self.status.content.color = '#cdad4b'
+                self.status.content.color = '#ababab'
                 self.status.tooltip.message = TEXTS.NEED_CHECK
             case 1:
                 self.status.content.name = ft.icons.CHECK
-                self.status.content.color = '#5bae5b'
+                self.status.content.color = '#8b8b8b'
                 self.status.tooltip.message = TEXTS.CHECKED
             case 2:
                 self.status.content.name = ft.icons.ERROR_OUTLINE
-                self.status.content.color = '#c1d36e'
+                self.status.content.color = '#c2c2c2'
                 self.status.tooltip.message = TEXTS.NEED_RECHECK
         if _update:
             self.status.update()
+            if self.checkbox.value:
+                self.main.bulk.update_values()
+
+    def update_info(self, text, _update=True):
+        self.delete_info.content.value = text
+        if _update:
+            self.delete_info.update()
             if self.checkbox.value:
                 self.main.bulk.update_values()
 
@@ -1162,24 +1157,12 @@ class EmojiItem(ft.Container):
         self.dropdown_keys = dropdown_keys
         self.reason.update()
 
-    def change_risk_level(self, level, _update=True):
-        self.update_risk_level(level, _update)
-        websocket.change_risk_level(self.risk_id, level, self.page)
-
-    def change_reason(self, rsid, _update=True):
-        self.update_reason(rsid, _update)
-        websocket.change_reason(self.risk_id, rsid, self.page)
-
-    def change_remark(self, text, _update=True):
-        self.update_remark(text, _update)
-        websocket.change_remark(self.risk_id, text, self.page)
-
-    def change_status(self, status, _update=True):
-        self.update_status(status, _update)
-        websocket.change_status(self.risk_id, status, self.page)
+    def change_info(self, text, _update=True):
+        self.update_info(text, _update)
+        websocket.change_info(self.eid, text, self.page)
 
 class MoreLoad(ft.Container):
-    def __init__(self, main: PanelEmojis):
+    def __init__(self, main: PanelDeletedEmojis):
         super().__init__()
 
         self.main = main
@@ -1212,8 +1195,8 @@ class MoreLoad(ft.Container):
         self.main.load_next()
 
 
-class EmojiBulkChanger(ft.Container):
-    def __init__(self, main: PanelEmojis):
+class DeletedEmojiBulkChanger(ft.Container):
+    def __init__(self, main: PanelDeletedEmojis):
         super().__init__()
 
         self.main = main
@@ -1237,68 +1220,20 @@ class EmojiBulkChanger(ft.Container):
             style=ft.TextStyle(italic=True),
         )
 
-        def change_risk_level(e):
+        self._info = ''
+
+        def focus_info(e):
+            self._info = self.delete_info.content.value
+
+        def change_info(e):
             self.main.lock()
-            match self.risk_level.value:
-                case 'risk_0':
-                    level = 0
-                case 'risk_1':
-                    level = 1
-                case 'risk_2':
-                    level = 2
-                case 'risk_3':
-                    level = 3
-                case _:
-                    level = None
-            for i in self.main.selected:
-                i.change_risk_level(level, False)
-            self.main.update()
-            self.update_values()
-            self.main.unlock()
-
-        def change_reason(e):
-            self.main.lock()
-            rsid = self.reason.content.value
-            if self.reason.content.value == 'none':
-                rsid = None
-            for i in self.main.selected:
-                i.change_reason(rsid)
-            self.reason.update()
-            self.update_values()
-            self.main.unlock()
-
-        self._remark = ''
-
-        def focus_remark(e):
-            self._remark = self.remark.content.value
-
-        def change_remark(e):
-            self.main.lock()
-            if self._remark != self.remark.content.value:
-                self._remark = self.remark.content.value
-                text = self.remark.content.value
+            if self._info != self.delete_info.content.value:
+                self._info = self.delete_info.content.value
+                text = self.delete_info.content.value
                 for i in self.main.selected:
-                    i.change_remark(text, False)
+                    i.change_info(text, False)
                 self.main.update()
                 self.update_values()
-            self.main.unlock()
-
-        def change_status(e):
-            self.main.lock()
-            match self._status_value:
-                case -1:
-                    status = 1
-                case 0:
-                    status = 1
-                case 1:
-                    status = 0
-                case 2:
-                    status = 1
-            self._update_status(status)
-            for i in self.main.selected:
-                i.change_status(status, False)
-            self.main.update()
-            self.update_values()
             self.main.unlock()
 
         self.risk_level = ft.RadioGroup(
@@ -1336,7 +1271,7 @@ class EmojiBulkChanger(ft.Container):
                 ],
                 spacing=10,
             ),
-            on_change=change_risk_level,
+            disabled=True,
         )
         self.reason = ft.Container(
             content=ft.Dropdown(
@@ -1347,9 +1282,9 @@ class EmojiBulkChanger(ft.Container):
                 fill_color='#10ffffff',
                 text_size=14,
                 content_padding=ft.padding.symmetric(horizontal=10),
-                on_change=change_reason,
             ),
             expand=True,
+            disabled=True,
             padding=4,
         )
         self.remark = ft.Container(
@@ -1359,11 +1294,9 @@ class EmojiBulkChanger(ft.Container):
                 filled=True,
                 fill_color='#10ffffff',
                 content_padding=ft.padding.symmetric(horizontal=10),
-                on_focus=focus_remark,
-                on_blur=change_remark,
-                on_submit=change_remark,
             ),
             expand=True,
+            disabled=True,
             padding=4,
         )
         self.status = ft.Container(
@@ -1376,17 +1309,31 @@ class EmojiBulkChanger(ft.Container):
                 wait_duration=1000,
             ),
             expand=True,
+            disabled=True,
             border_radius=4,
             alignment=ft.alignment.center,
             margin=4,
             ink=True,
-            on_click=change_status,
+        )
+        self.delete_info = ft.Container(
+            content=ft.TextField(
+                expand=True,
+                border_color='transparent',
+                filled=True,
+                fill_color='#10ffffff',
+                content_padding=ft.padding.symmetric(horizontal=10),
+                on_focus=focus_info,
+                on_blur=change_info,
+                on_submit=change_info,
+            ),
+            expand=True,
+            padding=4,
         )
 
-        self.half_risk_0 = ft.Icon(name=ft.icons.REMOVE_CIRCLE_OUTLINE_ROUNDED, color='#005bae5b', size=20)
-        self.half_risk_1 = ft.Icon(name=ft.icons.REMOVE_CIRCLE_OUTLINE_ROUNDED, color='#00c1d36e', size=20)
-        self.half_risk_2 = ft.Icon(name=ft.icons.REMOVE_CIRCLE_OUTLINE_ROUNDED, color='#00cdad4b', size=20)
-        self.half_risk_3 = ft.Icon(name=ft.icons.REMOVE_CIRCLE_OUTLINE_ROUNDED, color='#00cc4444', size=20)
+        self.half_risk_0 = ft.Icon(name=ft.icons.REMOVE_CIRCLE_OUTLINE_ROUNDED, color='#008b8b8b', size=20)
+        self.half_risk_1 = ft.Icon(name=ft.icons.REMOVE_CIRCLE_OUTLINE_ROUNDED, color='#00c2c2c2', size=20)
+        self.half_risk_2 = ft.Icon(name=ft.icons.REMOVE_CIRCLE_OUTLINE_ROUNDED, color='#00ababab', size=20)
+        self.half_risk_3 = ft.Icon(name=ft.icons.REMOVE_CIRCLE_OUTLINE_ROUNDED, color='#006c6c6c', size=20)
 
         self.disabled = True
         self.height = 50
@@ -1450,6 +1397,12 @@ class EmojiBulkChanger(ft.Container):
                     alignment=ft.alignment.center_left,
                     content=self.status,
                 ),
+                ft.VerticalDivider(width=2, thickness=2),
+                ft.Container(
+                    width=300,
+                    alignment=ft.alignment.center_left,
+                    content=self.delete_info,
+                ),
                 ft.Container(width=10),
             ]
         )
@@ -1465,10 +1418,11 @@ class EmojiBulkChanger(ft.Container):
         self.reason.content.value = None
         self.reason.content.hint_text = ''
         self.remark.content.value = None
-        self.half_risk_0.color = '#005bae5b'
-        self.half_risk_1.color = '#00c1d36e'
-        self.half_risk_2.color = '#00cdad4b'
-        self.half_risk_3.color = '#00cc4444'
+        self.half_risk_0.color = '#008b8b8b'
+        self.half_risk_1.color = '#00c2c2c2'
+        self.half_risk_2.color = '#00ababab'
+        self.half_risk_3.color = '#006c6c6c'
+        self.delete_info.content.value = ''
         self._update_status(-2)
 
         self.update()
@@ -1499,10 +1453,11 @@ class EmojiBulkChanger(ft.Container):
             self.reason.content.value = None
             self.reason.content.hint_text = ''
             self.remark.content.value = None
-            self.half_risk_0.color = '#005bae5b'
-            self.half_risk_1.color = '#00c1d36e'
-            self.half_risk_2.color = '#00cdad4b'
-            self.half_risk_3.color = '#00cc4444'
+            self.half_risk_0.color = '#008b8b8b'
+            self.half_risk_1.color = '#00c2c2c2'
+            self.half_risk_2.color = '#00ababab'
+            self.half_risk_3.color = '#006c6c6c'
+            self.delete_info.content.value = ''
             self._update_status(-2)
         elif nsel == 1:
             e = list(self.main.selected)[0]
@@ -1510,14 +1465,15 @@ class EmojiBulkChanger(ft.Container):
             common_reason = e.reason.content.value
             common_remark = e.remark.content.value
             common_status = e.status_value
+            common_info = e.delete_info.content.value
             if common_reason == '': common_reason = None
             if common_remark == '': common_remark = None
 
             self.risk_level.value = common_risk_level
-            self.half_risk_0.color = '#005bae5b'
-            self.half_risk_1.color = '#00c1d36e'
-            self.half_risk_2.color = '#00cdad4b'
-            self.half_risk_3.color = '#00cc4444'
+            self.half_risk_0.color = '#008b8b8b'
+            self.half_risk_1.color = '#00c2c2c2'
+            self.half_risk_2.color = '#00ababab'
+            self.half_risk_3.color = '#006c6c6c'
             self.reason.content.value = common_reason
             if common_reason is not None:
                 if common_reason in self.dropdown_keys:
@@ -1527,18 +1483,21 @@ class EmojiBulkChanger(ft.Container):
             else:
                 self.reason.content.hint_text = ''
             self.remark.content.value = common_remark
+            self.delete_info.content.value = common_info
             self._update_status(common_status)
         else:
             is_common_risk_level = True
             is_common_reason = True
             is_common_remark = True
             is_common_status = True
+            is_common_info = True
 
             contains_risk = [False, False, False, False]
             common_risk_level = list(self.main.selected)[0].risk_level.value
             common_reason = list(self.main.selected)[0].reason.content.value
             common_remark = list(self.main.selected)[0].remark.content.value
             common_status = list(self.main.selected)[0].status_value
+            common_info = list(self.main.selected)[0].delete_info.content.value
             if common_reason == '': common_reason = None
             if common_remark == '': common_remark = None
 
@@ -1557,6 +1516,7 @@ class EmojiBulkChanger(ft.Container):
                 reason = e.reason.content.value
                 remark = e.remark.content.value
                 status = e.status_value
+                delete_info = e.delete_info.content.value
                 if reason == '': reason = None
                 if remark == '': remark = None
 
@@ -1564,6 +1524,7 @@ class EmojiBulkChanger(ft.Container):
                 is_common_reason = is_common_reason and common_reason == reason
                 is_common_remark = is_common_remark and common_remark == remark
                 is_common_status = is_common_status and common_status == status
+                is_common_info = is_common_info and common_info == delete_info
 
                 match risk_level:
                     case 'risk_0':
@@ -1577,16 +1538,16 @@ class EmojiBulkChanger(ft.Container):
 
             if is_common_risk_level:
                 self.risk_level.value = common_risk_level
-                self.half_risk_0.color = '#005bae5b'
-                self.half_risk_1.color = '#00c1d36e'
-                self.half_risk_2.color = '#00cdad4b'
-                self.half_risk_3.color = '#00cc4444'
+                self.half_risk_0.color = '#008b8b8b'
+                self.half_risk_1.color = '#00c2c2c2'
+                self.half_risk_2.color = '#00ababab'
+                self.half_risk_3.color = '#006c6c6c'
             else:
                 self.risk_level.value = None
-                self.half_risk_0.color = '#5bae5b' if contains_risk[0] else '#005bae5b'
-                self.half_risk_1.color = '#c1d36e' if contains_risk[1] else '#00c1d36e'
-                self.half_risk_2.color = '#cdad4b' if contains_risk[2] else '#00cdad4b'
-                self.half_risk_3.color = '#cc4444' if contains_risk[3] else '#00cc4444'
+                self.half_risk_0.color = '#8b8b8b' if contains_risk[0] else '#008b8b8b'
+                self.half_risk_1.color = '#c2c2c2' if contains_risk[1] else '#00c2c2c2'
+                self.half_risk_2.color = '#ababab' if contains_risk[2] else '#00ababab'
+                self.half_risk_3.color = '#6c6c6c' if contains_risk[3] else '#006c6c6c'
             if is_common_reason:
                 self.reason.content.value = common_reason
                 if common_reason is not None:
@@ -1607,6 +1568,10 @@ class EmojiBulkChanger(ft.Container):
                 self._update_status(common_status)
             else:
                 self._update_status(-1)
+            if is_common_info:
+                self.delete_info.content.value = common_info
+            else:
+                self.delete_info.content.value = TEXTS.MISC_MIXED
         self.update()
 
     def _update_status(self, status):
@@ -1622,15 +1587,15 @@ class EmojiBulkChanger(ft.Container):
                 self.status.tooltip = TEXTS.MISC_MIXED
             case 0:
                 self.status.content.name = ft.icons.ERROR
-                self.status.content.color = '#cdad4b'
+                self.status.content.color = '#ababab'
                 self.status.tooltip = TEXTS.NEED_CHECK
             case 1:
                 self.status.content.name = ft.icons.CHECK
-                self.status.content.color = '#5bae5b'
+                self.status.content.color = '#8b8b8b'
                 self.status.tooltip = TEXTS.CHECKED
             case 2:
                 self.status.content.name = ft.icons.ERROR_OUTLINE
-                self.status.content.color = '#c1d36e'
+                self.status.content.color = '#c2c2c2'
                 self.status.tooltip = TEXTS.NEED_RECHECK
 
     def reload_dropdown(self):
@@ -1644,7 +1609,7 @@ class EmojiBulkChanger(ft.Container):
         self.reason.update()
 
 class ActionsDialog(ft.AlertDialog):
-    def __init__(self, main: PanelEmojis, filter_enabled: bool):
+    def __init__(self, main: PanelDeletedEmojis, filter_enabled: bool):
         super().__init__()
 
         self.main = main
@@ -1656,7 +1621,7 @@ class ActionsDialog(ft.AlertDialog):
             ret = self.main.export_csv()
             if ret is not None:
                 if ret > 0:
-                    msg = f'{ret}個の絵文字データを出力しました\n出力先: out_emojis.csv'
+                    msg = f'{ret}個の絵文字データを出力しました\n出力先: out_deleted_emojis.csv'
                 else:
                     msg = '対象の絵文字が無い為、書き出しを中断しました'
             else:
@@ -1687,7 +1652,7 @@ class ActionsDialog(ft.AlertDialog):
             ret = self.main.export_selected_csv()
             if ret is not None:
                 if ret > 0:
-                    msg = f'{ret}個の絵文字データを出力しました\n出力先: out_emojis.csv'
+                    msg = f'{ret}個の絵文字データを出力しました\n出力先: out_deleted_emojis.csv'
                 else:
                     msg = '対象の絵文字が無い為、書き出しを中断しました'
             else:
@@ -1820,7 +1785,7 @@ class ActionsDialog(ft.AlertDialog):
         ]
 
 class FilteringDialog(ft.AlertDialog):
-    def __init__(self, main: PanelEmojis):
+    def __init__(self, main: PanelDeletedEmojis):
         super().__init__()
 
         self.main = main
@@ -1832,7 +1797,7 @@ class FilteringDialog(ft.AlertDialog):
             self.page.close_dialog()
 
         def ok_filtering(e):
-            filter: EmojiFilter = self.content.build_filter()
+            filter: DeletedEmojiFilter = self.content.build_filter()
             self.main.update_filter(filter)
             self.page.close_dialog()
 
@@ -1863,7 +1828,7 @@ class FilteringDialog(ft.AlertDialog):
         ]
 
 class FilteringDialogContent(ft.Column):
-    def __init__(self, filter: EmojiFilter):
+    def __init__(self, filter: DeletedEmojiFilter):
         super().__init__()
 
         self.scroll = ft.ScrollMode.ALWAYS
@@ -2016,7 +1981,7 @@ class FilteringDialogContent(ft.Column):
             self.main_container,
         ]
 
-    def build_filter(self) -> EmojiFilter:
+    def build_filter(self) -> DeletedEmojiFilter:
 
         self_made_no = self.is_self_made.controls[1].value
         self_made_yes = self.is_self_made.controls[0].value
@@ -2065,7 +2030,7 @@ class FilteringDialogContent(ft.Column):
         empty_username = self.username.get_empty()
         empty_remark = self.remark.get_empty()
 
-        return EmojiFilter(enabled, enabled_name, enabled_category, enabled_tags, enabled_is_self_made, enabled_licence, enabled_username, enabled_risk_level, enabled_reason_genre, enabled_remark, enabled_status, name, category, tags, is_self_made, licence, username, risk_level, reason_genre, remark, status, empty_category, empty_tags, empty_licence, empty_username, empty_remark)
+        return DeletedEmojiFilter(enabled, enabled_name, enabled_category, enabled_tags, enabled_is_self_made, enabled_licence, enabled_username, enabled_risk_level, enabled_reason_genre, enabled_remark, enabled_status, name, category, tags, is_self_made, licence, username, risk_level, reason_genre, remark, status, empty_category, empty_tags, empty_licence, empty_username, empty_remark)
 
 class ControlWithSwitch(ft.Container):
     def __init__(self, content: ft.Control, label: str, enable: bool = True):
@@ -2106,7 +2071,7 @@ class EmptyOrTextField(ft.Row):
             disabled=empty,
         )
         self.cb = ft.Checkbox(
-            label='空の項目のみを検索',
+            label=TEXTS.FILTERING.SEARCH_EMPTY,
             value=empty,
             on_change=toggle_empty,
         )
