@@ -159,14 +159,9 @@ class PanelEmojis(ft.Row):
         self.unload_all()
         self.load_next()
 
-    def export_csv(self):
-        if self.loading: return
-        self.loading = True
-        self.lock()
-
-        eids = [eid for eid in self.filtered_emojis]
+    def write_csv(self, eids, filename) -> int | None:
         try:
-            with open('out_emojis.csv', 'wt', encoding='utf-8', newline='') as fs:
+            with open(filename, 'wt', encoding='utf-8', newline='') as fs:
                 writer = csv.writer(fs)
                 writer.writerow(['ID', '絵文字名', 'カテゴリー', 'タグ', 'URL', '自作フラグ', 'ライセンス表記', '所有者', '危険度', '理由区分', '備考', '状態'])
                 for eid in eids:
@@ -234,11 +229,45 @@ class PanelEmojis(ft.Row):
         except Exception:
             traceback.print_exc()
             succeed = False
+        return succeed
+
+    def export_csv(self):
+        if self.loading: return
+        self.loading = True
+        self.lock()
+
+        eids = [eid for eid in self.filtered_emojis]
+        if len(eids) > 0:
+            if self.write_csv(eids, 'out_emojis.csv'):
+                ret = len(eids)
+            else:
+                ret = None
+        else:
+            ret = 0
 
         self.unlock()
         self.loading = False
 
-        return succeed
+        return ret
+
+    def export_selected_csv(self):
+        if self.loading: return
+        self.loading = True
+        self.lock()
+
+        eids = [eid for eid, emoji in self.list_emoji.emojis.items() if emoji.checkbox.value]
+        if len(eids) > 0:
+            if self.write_csv(eids, 'out_emojis.csv'):
+                ret = len(eids)
+            else:
+                ret = None
+        else:
+            ret = 0
+
+        self.unlock()
+        self.loading = False
+
+        return ret
 
 
 class EmojiHeader(ft.Container):
@@ -1624,22 +1653,45 @@ class ActionsDialog(ft.AlertDialog):
             self.main.open_filtering_menu()
 
         def export_csv(e):
-            self.main.export_csv()
-            self.page.close_dialog()
+            ret = self.main.export_csv()
+            if ret is not None:
+                if ret > 0:
+                    msg = f'{ret}個の絵文字データを出力しました\n出力先: out_emojis.csv'
+                else:
+                    msg = '対象の絵文字が無い為、書き出しを中断しました'
+            else:
+                msg = 'エラーが発生しました\nもう一度試しても直らない場合はバグの可能性があるので報告してください'
+            self.page.show_dialog(
+                ft.AlertDialog(
+                    content=ft.Container(
+                        content=ft.Text(msg),
+                        margin=ft.Margin(10, 20, 10, 0),
+                    ),
+                )
+            )
+
+        def export_selected_csv(e):
+            ret = self.main.export_selected_csv()
+            if ret is not None:
+                if ret > 0:
+                    msg = f'{ret}個の絵文字データを出力しました\n出力先: out_emojis.csv'
+                else:
+                    msg = '対象の絵文字が無い為、書き出しを中断しました'
+            else:
+                msg = 'エラーが発生しました\nもう一度試しても直らない場合はバグの可能性があるので報告してください'
+            self.page.show_dialog(
+                ft.AlertDialog(
+                    content=ft.Container(
+                        content=ft.Text(msg),
+                        margin=ft.Margin(10, 20, 10, 0),
+                    ),
+                )
+            )
 
         self.filtering = ft.Container(
             content=ft.Icon(
                 name=ft.icons.FILTER_LIST_ROUNDED,
                 color='#40ff40' if filter_enabled else '#606060',
-            ),
-            width=50,
-            height=50,
-        )
-
-        self.exporting = ft.Container(
-            content=ft.Icon(
-                name=ft.icons.IOS_SHARE_OUTLINED,
-                color='#c0c0c0',
             ),
             width=50,
             height=50,
@@ -1663,11 +1715,43 @@ class ActionsDialog(ft.AlertDialog):
             on_click=open_filtering_menu,
             disabled=False,
         )
-        self.exporting_container = ft.Container(
+        self.export_selected_container = ft.Container(
             content=ft.Column(
                 controls=[
-                    self.exporting,
-                    ft.Text('CSVファイルに出力', text_align=ft.TextAlign.CENTER)
+                    ft.Container(
+                        content=ft.Icon(
+                            name=ft.icons.IOS_SHARE_OUTLINED,
+                            color='#c0c0c0',
+                        ),
+                        width=50,
+                        height=50,
+                    ),
+                    ft.Text('選択中の項目を\nCSVファイルに出力', text_align=ft.TextAlign.CENTER)
+                ],
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                tight=True,
+            ),
+            width=150,
+            height=150,
+            border_radius=8,
+            alignment=ft.alignment.center,
+            margin=4,
+            ink=True,
+            on_click=export_selected_csv,
+            disabled=False,
+        )
+        self.export_container = ft.Container(
+            content=ft.Column(
+                controls=[
+                    ft.Container(
+                        content=ft.Icon(
+                            name=ft.icons.IOS_SHARE_OUTLINED,
+                            color='#c0c0c0',
+                        ),
+                        width=50,
+                        height=50,
+                    ),
+                    ft.Text('フィルターに合致する\n全ての項目を\nCSVファイルに出力', text_align=ft.TextAlign.CENTER)
                 ],
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 tight=True,
@@ -1686,7 +1770,8 @@ class ActionsDialog(ft.AlertDialog):
             content=ft.Row(
                 controls=[
                     self.filtering_container,
-                    self.exporting_container,
+                    self.export_selected_container,
+                    self.export_container,
                 ],
                 alignment=ft.MainAxisAlignment.CENTER,
                 spacing=20,
