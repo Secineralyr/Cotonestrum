@@ -374,7 +374,7 @@ class EmojiHeader(ft.Container):
 
     def set_filtering_status(self, enable: bool):
         self.filter_enabled = enable
-        self.actions.content.color = '#40ff40' if self.filter_enabled else '#606060'
+        self.actions.content.color = '#40ff40' if self.filter_enabled else '#c0c0c0'
         self.actions.content.update()
 
 class EmojiList(ft.ListView):
