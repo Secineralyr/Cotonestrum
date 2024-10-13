@@ -1632,6 +1632,19 @@ class ActionsDialog(ft.AlertDialog):
                         content=ft.Text(msg),
                         margin=ft.Margin(10, 20, 10, 0),
                     ),
+                    actions=[
+                        ft.OutlinedButton(
+                            content=ft.Text(
+                                value='OK',
+                                style=ft.TextStyle(weight=ft.FontWeight.BOLD),
+                            ),
+                            style=ft.ButtonStyle(
+                                side=ft.BorderSide(width=2),
+                                shape=ft.RoundedRectangleBorder(3)
+                            ),
+                            on_click=lambda e: self.page.close_dialog(),
+                        ),
+                    ],
                 )
             )
 
@@ -1650,6 +1663,19 @@ class ActionsDialog(ft.AlertDialog):
                         content=ft.Text(msg),
                         margin=ft.Margin(10, 20, 10, 0),
                     ),
+                    actions=[
+                        ft.OutlinedButton(
+                            content=ft.Text(
+                                value='OK',
+                                style=ft.TextStyle(weight=ft.FontWeight.BOLD),
+                            ),
+                            style=ft.ButtonStyle(
+                                side=ft.BorderSide(width=2),
+                                shape=ft.RoundedRectangleBorder(3)
+                            ),
+                            on_click=lambda e: self.page.close_dialog(),
+                        ),
+                    ],
                 )
             )
 
@@ -1744,7 +1770,19 @@ class ActionsDialog(ft.AlertDialog):
             margin=ft.Margin(10, 20, 10, 0)
         )
 
-        self.actions = []
+        self.actions = [
+            ft.OutlinedButton(
+                content=ft.Text(
+                    value='閉じる',
+                    style=ft.TextStyle(weight=ft.FontWeight.BOLD),
+                ),
+                style=ft.ButtonStyle(
+                    side=ft.BorderSide(width=2),
+                    shape=ft.RoundedRectangleBorder(3)
+                ),
+                on_click=lambda e: self.page.close_dialog(),
+            ),
+        ]
 
 class FilteringDialog(ft.AlertDialog):
     def __init__(self, main: PanelDeletedEmojis):
