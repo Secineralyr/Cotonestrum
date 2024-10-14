@@ -5,6 +5,7 @@ import asyncio
 
 import flet as ft
 
+from app.panels.logs import PanelLogs
 from app.utils.data import KeyboardBehaviorData
 from core import registry
 from core import websocket
@@ -160,6 +161,7 @@ class PanelEmojis(ft.Row):
         self.load_next()
 
     def write_csv(self, eids, filename) -> int | None:
+        panel_logs: PanelLogs = self.page.data['logs']
         try:
             with open(filename, 'wt', encoding='utf-8', newline='') as fs:
                 writer = csv.writer(fs)
@@ -213,10 +215,12 @@ class PanelEmojis(ft.Row):
                         match risk_data.checked:
                             case 0:
                                 checked = '要チェック'
-                            case 0:
+                            case 1:
                                 checked = 'チェック済'
-                            case 0:
+                            case 2:
                                 checked = '要再チェック(絵文字更新済)'
+                            case _:  # unreachable if work correctly
+                                checked = '<不明>'
                     else:
                         # unreachable if work correctly
                         level = '<不明>'
@@ -227,6 +231,7 @@ class PanelEmojis(ft.Row):
                     writer.writerow([misskey_id, name, category, tags, url, is_self_made, license, username, level, reason_text, remark, checked])
             succeed = True
         except Exception:
+            panel_logs.write_log("white_csv process exception", traceback.format_exc(), None, True)
             traceback.print_exc()
             succeed = False
         return succeed
@@ -1926,8 +1931,8 @@ class FilteringDialogContent(ft.Column):
         self.status = ft.Column(
             controls=[
                 ft.Checkbox(label=TEXTS.FILTERING.NEED_CHECK, value=filter.status.need_check),
-                ft.Checkbox(label=TEXTS.FILTERING.CHECKED, value=filter.status.need_recheck),
-                ft.Checkbox(label=TEXTS.FILTERING.NEED_RECHECK, value=filter.status.checked),
+                ft.Checkbox(label=TEXTS.FILTERING.NEED_RECHECK, value=filter.status.need_recheck),
+                ft.Checkbox(label=TEXTS.FILTERING.CHECKED, value=filter.status.checked),
             ],
             spacing=0,
         )
