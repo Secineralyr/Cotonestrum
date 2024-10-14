@@ -1926,8 +1926,8 @@ class FilteringDialogContent(ft.Column):
         self.status = ft.Column(
             controls=[
                 ft.Checkbox(label=TEXTS.FILTERING.NEED_CHECK, value=filter.status.need_check),
-                ft.Checkbox(label=TEXTS.FILTERING.CHECKED, value=filter.status.need_recheck),
-                ft.Checkbox(label=TEXTS.FILTERING.NEED_RECHECK, value=filter.status.checked),
+                ft.Checkbox(label=TEXTS.FILTERING.NEED_RECHECK, value=filter.status.need_recheck),
+                ft.Checkbox(label=TEXTS.FILTERING.CHECKED, value=filter.status.checked),
             ],
             spacing=0,
         )
